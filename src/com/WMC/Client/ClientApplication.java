@@ -34,11 +34,22 @@ public class ClientApplication {
 			}
 		}
 		
-		StringBuilder statusSB = new StringBuilder();
-		statusSB.append("Display Name  : ").append(clientInfo.displayName).append("\n");
-		statusSB.append("Server Address: ").append(clientInfo.serverAddress).append("\n");
-		statusSB.append("Server Port   : ").append(clientInfo.serverPort).append("\n");
-		System.out.print(statusSB.toString());
+		StringBuilder statusSB = new StringBuilder("ClientInitializeWindow returned:\n");
+		statusSB.append("Display Name  : ").append(clientInfo.getDisplayName()).append("\n");
+		statusSB.append("Server Address: ").append(clientInfo.getServerAddress()).append("\n");
+		statusSB.append("Server Port   : ").append(clientInfo.getServerPort()).append("\n");
+		System.out.println(statusSB.toString());
+		
+		EventQueue.invokeLater(new Runnable() {
+			public void run() {
+				try {
+					ClientChatWindow frame = new ClientChatWindow(clientInfo);
+					frame.setVisible(true);
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
+			}
+		});
 		
 		System.out.println("End ClientApplication");
 	}

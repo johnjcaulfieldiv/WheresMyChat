@@ -159,9 +159,9 @@ public class ClientInitializeWindow {
 		if (!inputValid)
 			return;
 		
-		clientInfo.displayName = displayNameTextField.getText();
-		clientInfo.serverAddress = serverAddressTextField.getText();
-		clientInfo.serverPort = serverPortTextField.getText();
+		clientInfo.setDisplayName(displayNameTextField.getText());
+		clientInfo.setServerAddress(serverAddressTextField.getText());
+		clientInfo.setServerPort(serverPortTextField.getText());
 		
 		clientInitFrame.dispose();
 	}	
