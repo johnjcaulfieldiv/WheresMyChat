@@ -172,16 +172,16 @@ public class ClientInitializeWindow {
 
 	private boolean validateDisplayName() {
 		String dn = displayNameTextField.getText();
-		return !dn.equals("");
+		return !dn.trim().equals("");
 	}
 	
 	private boolean validateServerAddress() {
 		String sa = serverAddressTextField.getText();
-		return !sa.equals("");
+		return !sa.trim().equals("");
 	}
 	
 	private boolean validateServerPort() {
 		String sp = serverPortTextField.getText();
-		return !sp.equals("");
+		return !sp.trim().equals("");
 	}
 }
