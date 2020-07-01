@@ -159,9 +159,9 @@ public class ClientInitializeWindow {
 		if (!inputValid)
 			return;
 		
-		clientInfo.setDisplayName(displayNameTextField.getText());
-		clientInfo.setServerAddress(serverAddressTextField.getText());
-		clientInfo.setServerPort(serverPortTextField.getText());
+		clientInfo.setDisplayName(displayNameTextField.getText().trim());
+		clientInfo.setServerAddress(serverAddressTextField.getText().trim());
+		clientInfo.setServerPort(serverPortTextField.getText().trim());
 		
 		clientInitFrame.dispose();
 	}	
@@ -172,16 +172,16 @@ public class ClientInitializeWindow {
 
 	private boolean validateDisplayName() {
 		String dn = displayNameTextField.getText();
-		return !dn.trim().equals("");
+		return dn.trim().length() > 0;
 	}
 	
 	private boolean validateServerAddress() {
 		String sa = serverAddressTextField.getText();
-		return !sa.trim().equals("");
+		return sa.trim().length() > 0;
 	}
 	
 	private boolean validateServerPort() {
 		String sp = serverPortTextField.getText();
-		return !sp.trim().equals("");
+		return sp.trim().length() > 0;
 	}
 }
