@@ -21,10 +21,15 @@ import javax.swing.JScrollPane;
 public class ClientChatWindow extends JFrame {
 	private static final long serialVersionUID = 1L;
 	
+	private static final String HELP_STRING = "Commands: /h[elp], /quit, /exit";
+	
 	private JPanel contentPane;
 	private JTextArea messageTextArea;
+	private JTextArea chatTextArea;
 	private JScrollPane scrollPane;
 	private JScrollPane scrollPane_1;
+	
+	private ClientInformation clientInfo;
 	
 	private boolean shiftPressed = false;
 
@@ -43,6 +48,8 @@ public class ClientChatWindow extends JFrame {
 	}
 
 	public ClientChatWindow(ClientInformation clientInfo) {
+		this.clientInfo = clientInfo;
+		
 		setTitle("Where's My Chat, JC?");
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		setSize(800, 600);
@@ -65,7 +72,7 @@ public class ClientChatWindow extends JFrame {
 		gbc_scrollPane.gridy = 0;
 		contentPane.add(scrollPane, gbc_scrollPane);
 		
-		JTextArea chatTextArea = new JTextArea();
+		chatTextArea = new JTextArea();
 		scrollPane.setViewportView(chatTextArea);
 		chatTextArea.setEditable(false);
 		
@@ -94,10 +101,14 @@ public class ClientChatWindow extends JFrame {
 				if (e.getKeyCode() == KeyEvent.VK_ENTER && !shiftPressed) {
 					String message = messageTextArea.getText();
 					messageTextArea.setText("");					
+					
 					if (message.replace("\n", "").equals(""))
 						return;
-					chatTextArea.setText(chatTextArea.getText() + 
-							WMCUtil.getTimeStamp() + " " + clientInfo.getDisplayName() + ": " + message);
+					
+					if (message.startsWith("/"))
+						handleCommand(message);
+					else					
+						sendMessage(message);
 				}
 				else if (e.getKeyCode() == KeyEvent.VK_ENTER) {
 					messageTextArea.setText(messageTextArea.getText() + "\n");
@@ -118,5 +129,29 @@ public class ClientChatWindow extends JFrame {
 	
 	public void setMessageFocus() {
 		messageTextArea.requestFocusInWindow();
+	}
+	
+	public void handleCommand(String cmd) {
+		cmd = cmd.substring(1).trim();
+		
+		if (cmd.equals("quit") || cmd.equals("exit")) {
+			this.dispose();
+		}
+		else if (cmd.equals("h") || cmd.equals("help")) {
+			printHelp();
+		}
+	}
+	
+	public void printHelp() {
+		printMessage(HELP_STRING + "\n");
+	}
+	
+	public void sendMessage(String msg) {
+		chatTextArea.setText(chatTextArea.getText() + 
+			WMCUtil.getTimeStamp() + " " + clientInfo.getDisplayName() + ": " + msg);
+	}
+	
+	public void printMessage(String msg) {
+		chatTextArea.setText(chatTextArea.getText() + "[SYSTEM]: " + msg);
 	}
 }
