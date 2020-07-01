@@ -6,7 +6,7 @@ import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.border.EmptyBorder;
 
-import WMC.Utilities;
+import com.WMC.WMCUtil;
 
 import java.awt.GridBagLayout;
 import javax.swing.JTextArea;
@@ -16,9 +16,6 @@ import java.awt.GridBagConstraints;
 import java.awt.Insets;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
-import java.text.SimpleDateFormat;
-import java.util.Date;
-
 import javax.swing.JScrollPane;
 
 public class ClientChatWindow extends JFrame {
@@ -100,7 +97,7 @@ public class ClientChatWindow extends JFrame {
 					if (message.equals("\n"))
 						return;
 					chatTextArea.setText(chatTextArea.getText() + 
-							Utilities.getTimeStamp() + " " + clientInfo.getDisplayName() + ": " + message);
+							WMCUtil.getTimeStamp() + " " + clientInfo.getDisplayName() + ": " + message);
 				}
 				else if (e.getKeyCode() == KeyEvent.VK_ENTER) {
 					messageTextArea.setText(messageTextArea.getText() + "\n");
@@ -113,7 +110,7 @@ public class ClientChatWindow extends JFrame {
 			}
 		});
 		
-		String welcomeMessage = Utilities.getTimeStamp() + "\n" + 
+		String welcomeMessage = WMCUtil.getTimeStamp() + "\n" + 
 				clientInfo.getServerAddress() + ":" + clientInfo.getServerPort() + "\n" +
 				"Welcome to chat, " + clientInfo.getDisplayName() + "!\n\n";
 		chatTextArea.setText(welcomeMessage);
