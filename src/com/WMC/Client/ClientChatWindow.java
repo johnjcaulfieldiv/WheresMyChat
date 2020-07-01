@@ -40,6 +40,7 @@ public class ClientChatWindow extends JFrame {
 					UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
 					ClientChatWindow frame = new ClientChatWindow(new ClientInformation("DummyName", "127.0.0.1", "8507"));
 					frame.setVisible(true);
+					frame.setMessageFocus();
 				} catch (Exception e) {
 					e.printStackTrace();
 				}
@@ -108,7 +109,7 @@ public class ClientChatWindow extends JFrame {
 					if (message.startsWith("/"))
 						handleCommand(message);
 					else					
-						sendMessage(message);
+						sendUserMessage(message);
 				}
 				else if (e.getKeyCode() == KeyEvent.VK_ENTER) {
 					messageTextArea.setText(messageTextArea.getText() + "\n");
@@ -140,18 +141,25 @@ public class ClientChatWindow extends JFrame {
 		else if (cmd.equals("h") || cmd.equals("help")) {
 			printHelp();
 		}
+		else if (cmd.equals("secret") || cmd.equals("easteregg")) {
+			systemMessage("You have discovered a secret command. Well played.");
+		}
+		else {
+			systemMessage("Invalid command - " + cmd);
+			printHelp();
+		}
 	}
 	
 	public void printHelp() {
-		printMessage(HELP_STRING + "\n");
+		systemMessage(HELP_STRING);
 	}
 	
-	public void sendMessage(String msg) {
+	public void sendUserMessage(String msg) {
 		chatTextArea.setText(chatTextArea.getText() + 
 			WMCUtil.getTimeStamp() + " " + clientInfo.getDisplayName() + ": " + msg);
 	}
 	
-	public void printMessage(String msg) {
-		chatTextArea.setText(chatTextArea.getText() + "[SYSTEM]: " + msg);
+	public void systemMessage(String msg) {
+		chatTextArea.setText(chatTextArea.getText() + "[SYSTEM]: " + msg + "\n");
 	}
 }
