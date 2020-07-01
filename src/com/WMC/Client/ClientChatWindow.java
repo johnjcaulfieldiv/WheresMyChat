@@ -33,7 +33,7 @@ public class ClientChatWindow extends JFrame {
 			public void run() {
 				try {
 					UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
-					ClientChatWindow frame = new ClientChatWindow(new ClientInformation("DummyName", "localhost", "8507"));
+					ClientChatWindow frame = new ClientChatWindow(new ClientInformation("DummyName", "127.0.0.1", "8507"));
 					frame.setVisible(true);
 				} catch (Exception e) {
 					e.printStackTrace();
@@ -94,7 +94,7 @@ public class ClientChatWindow extends JFrame {
 				if (e.getKeyCode() == KeyEvent.VK_ENTER && !shiftPressed) {
 					String message = messageTextArea.getText();
 					messageTextArea.setText("");					
-					if (message.equals("\n"))
+					if (message.replace("\n", "").equals(""))
 						return;
 					chatTextArea.setText(chatTextArea.getText() + 
 							WMCUtil.getTimeStamp() + " " + clientInfo.getDisplayName() + ": " + message);
@@ -114,7 +114,9 @@ public class ClientChatWindow extends JFrame {
 				clientInfo.getServerAddress() + ":" + clientInfo.getServerPort() + "\n" +
 				"Welcome to chat, " + clientInfo.getDisplayName() + "!\n\n";
 		chatTextArea.setText(welcomeMessage);
-		
-		messageTextArea.requestFocus();
 	}	
+	
+	public void setMessageFocus() {
+		messageTextArea.requestFocusInWindow();
+	}
 }

@@ -21,11 +21,14 @@ public class ClientApplication {
 		EventQueue.invokeLater(new Runnable() {
 			@Override
 			public void run() {
-				ClientInitializeWindow window = new ClientInitializeWindow(clientInfo);
-				window.clientInitFrame.setVisible(true);
+				ClientInitializeWindow initWindow = new ClientInitializeWindow(clientInfo);
+				initWindow.clientInitFrame.setVisible(true);
 			}
 		});
 		
+		// hang until clientInfo is set in the initWindow
+		// not sure if this is the best method
+		// probably not, but it works for now
 		while (clientInfo.displayName.equals("")) {
 			try {
 				Thread.sleep(100, 0);
@@ -34,24 +37,25 @@ public class ClientApplication {
 			}
 		}
 		
+		/* debug */
 		StringBuilder statusSB = new StringBuilder("ClientInitializeWindow returned:\n");
 		statusSB.append("Display Name  : ").append(clientInfo.getDisplayName()).append("\n");
 		statusSB.append("Server Address: ").append(clientInfo.getServerAddress()).append("\n");
 		statusSB.append("Server Port   : ").append(clientInfo.getServerPort()).append("\n");
 		System.out.println(statusSB.toString());
+		/* end debug */
 		
 		EventQueue.invokeLater(new Runnable() {
 			public void run() {
 				try {
-					ClientChatWindow frame = new ClientChatWindow(clientInfo);
-					frame.setVisible(true);
+					ClientChatWindow chatWindow = new ClientChatWindow(clientInfo);
+					chatWindow.setVisible(true);
+					chatWindow.setMessageFocus();
 				} catch (Exception e) {
 					e.printStackTrace();
 				}
 			}
 		});
-		
-		System.out.println("End ClientApplication");
 	}
 	
 }
