@@ -36,6 +36,7 @@ import java.awt.event.ActionEvent;
 public class ClientChatWindow extends JFrame {
 	private static final long serialVersionUID = 1L;
 	
+	private static final String SYSTEM_TAG = "[ SYSTEM ]";	
 	private static final String HELP_STRING = "Commands: /h[elp], /quit, /exit";
 	
 	private static final String COLOR_FILENAME = "/res/clientChatWindowColorScheme";
@@ -240,7 +241,7 @@ public class ClientChatWindow extends JFrame {
 	}
 	
 	public void systemMessage(String msg) {
-		chatTextArea.setText(chatTextArea.getText() + "[SYSTEM]: " + msg + "\n");
+		chatTextArea.setText(chatTextArea.getText() + SYSTEM_TAG + ": " + msg + "\n");
 	}
 	
 	public void closeWindow() {
