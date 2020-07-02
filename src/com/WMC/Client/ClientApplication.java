@@ -5,8 +5,6 @@ import java.awt.EventQueue;
 import javax.swing.UIManager;
 
 public class ClientApplication {
-	
-	static ClientInformation clientInfo;
 
 	public static void main(String [] args) {
 		
@@ -16,7 +14,7 @@ public class ClientApplication {
 			e.printStackTrace();
 		}
 		
-		clientInfo = new ClientInformation();
+		ClientInformation clientInfo = new ClientInformation();
 		
 		EventQueue.invokeLater(new Runnable() {
 			@Override
@@ -31,14 +29,14 @@ public class ClientApplication {
 		// probably not, but it works for now
 		while (clientInfo.displayName.equals("")) {
 			try {
-				Thread.sleep(100, 0);
+				Thread.sleep(500, 0);
 			} catch (InterruptedException e) {
 				e.printStackTrace();
 			}
 		}
 		
 		/* debug */
-		StringBuilder statusSB = new StringBuilder("ClientInitializeWindow returned:\n");
+		StringBuilder statusSB = new StringBuilder("ClientInformation initialized to:\n");
 		statusSB.append("Display Name  : ").append(clientInfo.getDisplayName()).append("\n");
 		statusSB.append("Server Address: ").append(clientInfo.getServerAddress()).append("\n");
 		statusSB.append("Server Port   : ").append(clientInfo.getServerPort()).append("\n");
