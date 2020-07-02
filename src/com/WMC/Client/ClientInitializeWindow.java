@@ -2,13 +2,18 @@ package com.WMC.Client;
 
 import javax.swing.JFrame;
 import javax.swing.JLabel;
+import javax.swing.JOptionPane;
 import javax.swing.JTextField;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
 import javax.swing.JButton;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
 import javax.swing.ImageIcon;
+import java.beans.PropertyChangeListener;
+import java.beans.PropertyChangeEvent;
 
 public class ClientInitializeWindow {
 
@@ -91,6 +96,20 @@ public class ClientInitializeWindow {
 		clientInitFrame.getContentPane().add(serverAddressTextField);
 		
 		serverPortTextField = new JTextField();
+		serverPortTextField.getDocument().addDocumentListener(new DocumentListener() {
+			@Override
+			public void insertUpdate(DocumentEvent e) {
+				handlePortInputChange();
+			}
+			@Override
+			public void removeUpdate(DocumentEvent e) {
+				handlePortInputChange();
+			}
+			@Override
+			public void changedUpdate(DocumentEvent e) {
+				handlePortInputChange();
+			}
+		});
 		serverPortTextField.addKeyListener(new KeyAdapter() {
 			@Override
 			public void keyReleased(KeyEvent e) {
@@ -137,6 +156,12 @@ public class ClientInitializeWindow {
 		else {
 			changeLabelIcon(serverPortLabel, NO_ICON);
 			serverPortTextField.requestFocusInWindow();
+
+			JOptionPane.showMessageDialog(new JFrame(), 
+					"Port must be an integer between 1100 and 65535 inclusive", 
+					"Invalid Port", 
+					JOptionPane.ERROR_MESSAGE);
+			
 			inputValid = false;
 		}
 		
@@ -166,6 +191,17 @@ public class ClientInitializeWindow {
 		clientInitFrame.dispose();
 	}	
 	
+	private void handlePortInputChange() {
+		if (serverPortTextField.getText().length() > 0) {
+			if (!validateServerPort())
+				changeLabelIcon(serverPortLabel, NO_ICON);
+			else
+				changeLabelIcon(serverPortLabel, OK_ICON);
+		}
+		else
+			changeLabelIcon(serverPortLabel, null);
+	}
+	
 	private void changeLabelIcon(JLabel label, ImageIcon icon) {
 		label.setIcon(icon);
 	}
@@ -182,6 +218,16 @@ public class ClientInitializeWindow {
 	
 	private boolean validateServerPort() {
 		String sp = serverPortTextField.getText();
-		return sp.trim().length() > 0;
+		boolean valid = true;
+		valid = valid && sp.trim().length() > 0;
+		try {
+			int p = Integer.parseInt(sp);
+			if (p < 1100 || p > 65536)
+				valid = false;
+		} catch(Exception e) {
+			valid = false;
+		}
+		
+		return valid;
 	}
 }
