@@ -51,7 +51,7 @@ public class ClientApplication {
 			while (true) {
 				String msg = scan.nextLine();
 				net.send(msg);
-				if (msg.equals("exit"))
+				if (msg.equalsIgnoreCase("exit"))
 					break;
 			}
 			net.disconnect();
