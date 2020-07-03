@@ -1,6 +1,7 @@
 package com.WMC.Client;
 
 import java.awt.EventQueue;
+import java.util.Scanner;
 
 import javax.swing.UIManager;
 
@@ -43,17 +44,32 @@ public class ClientApplication {
 		System.out.println(statusSB.toString());
 		/* end debug */
 		
-		EventQueue.invokeLater(new Runnable() {
-			public void run() {
-				try {
-					ClientChatWindow chatWindow = new ClientChatWindow(clientInfo);
-					chatWindow.setVisible(true);
-					chatWindow.setMessageFocus();
-				} catch (Exception e) {
-					e.printStackTrace();
-				}
+		try {
+			NetworkIO net = new NetworkIO(clientInfo);
+			net.connect();
+			Scanner scan = new Scanner(System.in);
+			while (true) {
+				String msg = scan.nextLine();
+				net.send(msg);
+				if (msg.equals("exit"))
+					break;
 			}
-		});
+			net.disconnect();
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		
+//		EventQueue.invokeLater(new Runnable() {
+//			public void run() {
+//				try {
+//					ClientChatWindow chatWindow = new ClientChatWindow(clientInfo);
+//					chatWindow.setVisible(true);
+//					chatWindow.setMessageFocus();
+//				} catch (Exception e) {
+//					e.printStackTrace();
+//				}
+//			}
+//		});
 	}
 	
 }

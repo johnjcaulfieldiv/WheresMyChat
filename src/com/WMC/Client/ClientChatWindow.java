@@ -46,18 +46,22 @@ public class ClientChatWindow extends JFrame {
 	private JTextArea chatTextArea;
 	private JScrollPane scrollPane;
 	private JScrollPane scrollPane_1;
+
+	private JMenuBar menuBar;
+	private JMenu fileMenu;
+	private JMenuItem fileMenuItem_Exit;
+	private JMenu viewMenu;
+	private JMenuItem viewMenuItem_Colors;
 	
 	private ColorScheme colorScheme;
 	
 	private ClientInformation clientInfo;
 	
 	private boolean shiftPressed = false;
-	private JMenuBar menuBar;
-	private JMenu fileMenu;
-	private JMenuItem fileMenuItem_Exit;
-	private JMenu viewMenu;
-	private JMenuItem viewMenuItem_Colors;
 
+	/**
+	 * debug method to skip initialization. uses dummy values for displayname, serveraddress, serverport
+	 */
 	public static void main(String[] args) {
 		EventQueue.invokeLater(new Runnable() {
 			public void run() {
@@ -77,7 +81,7 @@ public class ClientChatWindow extends JFrame {
 	public ClientChatWindow(ClientInformation clientInfo) {
 		this.clientInfo = clientInfo;
 		
-		this.colorScheme = deserializeColorSchemeFromFile(COLOR_FILENAME);
+		this.colorScheme = getColorSchemeFromFile(COLOR_FILENAME);
 		if (colorScheme == null)
 			colorScheme = new ColorScheme();
 		
@@ -244,12 +248,19 @@ public class ClientChatWindow extends JFrame {
 		chatTextArea.setText(chatTextArea.getText() + SYSTEM_TAG + ": " + msg + "\n");
 	}
 	
+	/**
+	 * handle cleanup then dispose of ClientChatWindow
+	 */
 	public void closeWindow() {
-		this.serializeColorSchemeAndWriteToFile(COLOR_FILENAME);
+		this.writeColorSchemeToFile(COLOR_FILENAME);
 		this.dispose();
 	}
 	
-	private void serializeColorSchemeAndWriteToFile(String filename) {
+	/**
+	 * Serializes current ColorScheme to a file for persistence
+	 * @param filename
+	 */
+	private void writeColorSchemeToFile(String filename) {
 
 		URL url = ClientChatWindow.class.getResource(filename);
 		
@@ -268,7 +279,12 @@ public class ClientChatWindow extends JFrame {
         } 
 	}
 	
-	private ColorScheme deserializeColorSchemeFromFile(String filename) {
+	/**
+	 * Deserializes ColorScheme from file
+	 * @param filename - path to file to be read from
+	 * @return {@link ColorScheme} object read from file
+	 */
+	private ColorScheme getColorSchemeFromFile(String filename) {
 
 		URL url = ClientChatWindow.class.getResource(filename);
 		

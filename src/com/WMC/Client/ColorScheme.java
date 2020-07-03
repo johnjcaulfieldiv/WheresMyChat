@@ -3,6 +3,12 @@ package com.WMC.Client;
 import java.awt.Color;
 import java.io.Serializable;
 
+/**
+ * Model of colors for use in {@link ClientInitializeWindow}
+ * 
+ * Holds background color for text areas and
+ * color for text in text areas
+ */
 public class ColorScheme implements Serializable {
 	private static final long serialVersionUID = 1L;
 	
