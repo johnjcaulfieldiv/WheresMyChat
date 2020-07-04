@@ -32,28 +32,11 @@ public class ServerApplication {
 			s.start();
 			
 			int connections = 0;
-			while (connections++ < MAX_CONNECTIONS) {
-				s.accept();
-				Runnable readThread = new Runnable() {
-					@Override
-					public void run() {
-						try {
-							String clientMsg = s.read();
-							while (!clientMsg.equalsIgnoreCase("exit") && !clientMsg.equals(Server.MESSAGE_EOF_ERROR)) {
-								System.out.println(clientMsg);
-								clientMsg = s.read();
-							}
-						} catch (Exception e) {
-							e.printStackTrace();
-							return;
-						}
-					}
-				};
-				Thread t = new Thread(readThread);
+			while (connections++ < MAX_CONNECTIONS) {				
+				ClientHandler handler = new ClientHandler(s.accept());
+				Thread t = new Thread(handler);
 				threadList.add(t);
 				t.start();
-				t.join();
-				s.disconnect();
 			}
 			
 			for (Thread t : threadList) {
@@ -64,9 +47,8 @@ public class ServerApplication {
 			
 		} catch (IllegalArgumentException e) {
 			System.err.println("Error - Port must be in range 1100-65535\nUsage: ServerApplication [port]");
-		}catch (Exception e) {
+		} catch (Exception e) {
 			e.printStackTrace();
-			return;
 		}
 	}
 	

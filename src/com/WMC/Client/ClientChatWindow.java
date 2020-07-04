@@ -1,7 +1,5 @@
 package com.WMC.Client;
 
-import java.awt.EventQueue;
-
 import javax.swing.JColorChooser;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
@@ -11,8 +9,6 @@ import com.WMC.WMCUtil;
 
 import java.awt.GridBagLayout;
 import javax.swing.JTextArea;
-import javax.swing.UIManager;
-
 import java.awt.GridBagConstraints;
 import java.awt.Insets;
 import java.awt.event.KeyAdapter;
@@ -36,7 +32,7 @@ import java.awt.event.ActionEvent;
 public class ClientChatWindow extends JFrame {
 	private static final long serialVersionUID = 1L;
 	
-	private static final String SYSTEM_TAG = "[ SYSTEM ]";	
+	private static final String SYSTEM_TAG = "[ SYSTEM ]";
 	private static final String HELP_STRING = "Commands: /h[elp], /quit, /exit";
 	
 	private static final String COLOR_FILENAME = "/res/clientChatWindowColorScheme";
@@ -57,29 +53,14 @@ public class ClientChatWindow extends JFrame {
 	
 	private ClientInformation clientInfo;
 	
+	private NetworkIO netIO;
+	private Thread networkReaderThread;
+	
 	private boolean shiftPressed = false;
 
-	/**
-	 * debug method to skip initialization. uses dummy values for displayname, serveraddress, serverport
-	 */
-	public static void main(String[] args) {
-		EventQueue.invokeLater(new Runnable() {
-			public void run() {
-				try {
-					System.out.println("For Debugging purposes only. Run ClientApplication's main method in production");
-					UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
-					ClientChatWindow frame = new ClientChatWindow(new ClientInformation("DummyName", "127.0.0.1", "8507"));
-					frame.setVisible(true);
-					frame.setMessageFocus();
-				} catch (Exception e) {
-					e.printStackTrace();
-				}
-			}
-		});
-	}
-
-	public ClientChatWindow(ClientInformation clientInfo) {
+	public ClientChatWindow(ClientInformation clientInfo, NetworkIO net) {
 		this.clientInfo = clientInfo;
+		this.netIO = net;
 		
 		this.colorScheme = getColorSchemeFromFile(COLOR_FILENAME);
 		if (colorScheme == null)
@@ -193,6 +174,8 @@ public class ClientChatWindow extends JFrame {
 				clientInfo.getServerAddress() + ":" + clientInfo.getServerPort() + "\n" +
 				"Welcome to chat, " + clientInfo.getDisplayName() + "!\n\n";
 		chatTextArea.setText(welcomeMessage);
+
+		startServerReader();
 	}	
 	
 	private void setColors() {
@@ -242,6 +225,9 @@ public class ClientChatWindow extends JFrame {
 	public void sendUserMessage(String msg) {
 		chatTextArea.setText(chatTextArea.getText() + 
 			WMCUtil.getTimeStamp() + " " + clientInfo.getDisplayName() + ": " + msg);
+		
+		// network
+		netIO.send(msg);
 	}
 	
 	public void systemMessage(String msg) {
@@ -252,12 +238,34 @@ public class ClientChatWindow extends JFrame {
 	 * handle cleanup then dispose of ClientChatWindow
 	 */
 	public void closeWindow() {
+		netIO.disconnect();
 		this.writeColorSchemeToFile(COLOR_FILENAME);
+		
+		try {
+			networkReaderThread.join(1000);
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		}
+		
 		this.dispose();
 	}
 	
+	private void startServerReader() {
+		Runnable r = new Runnable() {
+			@Override
+			public void run() {
+				while (netIO.isActive()) {
+					String networkMsg = netIO.receive();
+					systemMessage(networkMsg);
+				}
+			}
+		};
+		networkReaderThread = new Thread(r);
+		networkReaderThread.start();
+	}
+		
 	/**
-	 * Serializes current ColorScheme to a file for persistence
+	 * Serializes current ColorScheme to a file
 	 * @param filename
 	 */
 	private void writeColorSchemeToFile(String filename) {
