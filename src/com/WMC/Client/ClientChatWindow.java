@@ -282,7 +282,7 @@ public class ClientChatWindow extends JFrame {
 	}
 	
 	/**
-	 * doesnt really work atm?
+	 * Doesn't really work atm?
 	 */
 	private void reconnectToServer() {
 		netIO.disconnect();
