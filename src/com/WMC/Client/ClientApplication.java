@@ -1,8 +1,6 @@
 package com.WMC.Client;
 
 import java.awt.EventQueue;
-import java.util.Scanner;
-
 import javax.swing.UIManager;
 
 public class ClientApplication {
@@ -63,7 +61,6 @@ public class ClientApplication {
 			public void run() {
 				try {
 					NetworkIO net = new NetworkIO(clientInfo);
-					net.connect();
 					ClientChatWindow chatWindow = new ClientChatWindow(clientInfo, net);
 					chatWindow.setVisible(true);
 					chatWindow.setMessageFocus();

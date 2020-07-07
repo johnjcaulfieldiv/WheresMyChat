@@ -1,7 +1,13 @@
 package com.WMC.Client;
 
 import java.awt.Color;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.io.Serializable;
+import java.net.URL;
 
 /**
  * Model of colors for use in {@link ClientInitializeWindow}
@@ -45,5 +51,53 @@ public class ColorScheme implements Serializable {
 	}
 	public void setTextColor(Color textColor) {
 		this.textColor = textColor;
+	}
+	
+	/**
+	 * Serializes this {@link ColorScheme} to a file
+	 * @param filename
+	 */
+	public void writeToFile(String filename) {
+
+		URL url = ClientChatWindow.class.getResource(filename);
+		
+		try { 
+            FileOutputStream file = new FileOutputStream(url.getPath()); 
+            ObjectOutputStream out = new ObjectOutputStream(file); 
+            
+            out.writeObject(this); 
+  
+            out.close(); 
+            file.close();
+        } catch (IOException e) { 
+            e.printStackTrace();
+        } 
+	}
+	
+	/**
+	 * Deserializes a {@link ColorScheme} from file
+	 * @param filename - path to file to be read from
+	 * @return {@link ColorScheme} object read from file
+	 */
+	public static ColorScheme getFromFile(String filename) {
+
+		URL url = ClientChatWindow.class.getResource(filename);
+		
+		try {
+	        FileInputStream file = new FileInputStream(url.getPath());
+	        ObjectInputStream in = new ObjectInputStream (file); 
+
+	        ColorScheme cs = (ColorScheme) in.readObject(); 
+	
+	        in.close(); 
+	        file.close();
+	        
+            System.out.println("Successfully read colorScheme from file");
+	        
+	        return cs;
+	    }  catch (Exception e) { 
+	    	e.printStackTrace();
+	    	return null;
+	    }
 	}
 }

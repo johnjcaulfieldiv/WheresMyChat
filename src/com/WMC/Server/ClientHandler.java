@@ -23,8 +23,8 @@ public class ClientHandler implements Runnable {
 		try {
 			in = new DataInputStream(new BufferedInputStream(client.getInputStream()));
 			out = new DataOutputStream(new BufferedOutputStream(client.getOutputStream()));
-		} catch (IOException e1) {
-			e1.printStackTrace();
+		} catch (IOException e) {
+			e.printStackTrace();
 			return;
 		}         
 		
@@ -34,8 +34,8 @@ public class ClientHandler implements Runnable {
 				System.out.println(clientMsg);
 				System.out.println("writing...");
 				writeLine("Got your message: " + clientMsg);
-				System.out.println("written");
 				System.out.println("reading...");
+				System.out.flush();
 				clientMsg = readLine();
 			}
 		} catch (Exception e) {
@@ -66,7 +66,9 @@ public class ClientHandler implements Runnable {
 	
 	private void writeLine(String message) {
 		try {
-			out.writeUTF(message);		
+			out.writeUTF(message);
+			out.flush();
+			System.out.println("wrote: " + "Got your message: " + message);
 		} catch (IOException e) {
 			e.printStackTrace();
 		}

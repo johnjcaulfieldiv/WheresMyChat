@@ -4,7 +4,7 @@ import java.util.ArrayList;
 
 public class ServerApplication {
 	
-	private static final int MAX_CONNECTIONS = 2;
+	private static final int MAX_CONNECTIONS = 100;
 
 	public static void main(String [] args) {
 		if (args.length != 1) {

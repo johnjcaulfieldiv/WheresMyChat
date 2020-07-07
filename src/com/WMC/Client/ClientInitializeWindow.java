@@ -12,8 +12,6 @@ import java.awt.event.KeyEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
 import javax.swing.ImageIcon;
-import java.beans.PropertyChangeListener;
-import java.beans.PropertyChangeEvent;
 
 public class ClientInitializeWindow {
 

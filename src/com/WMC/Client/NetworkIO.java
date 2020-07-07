@@ -6,6 +6,7 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.Socket;
+import java.net.SocketException;
 
 public class NetworkIO {
 	private ClientInformation clientInfo;
@@ -14,7 +15,7 @@ public class NetworkIO {
 	private String ip;
 	private int port;
 
-	DataInputStream in;
+	DataInputStream  in;
 	DataOutputStream out;
 	
 	private boolean isActive;
@@ -38,7 +39,11 @@ public class NetworkIO {
 		}	
 	}
 	
-	public void connect() {		
+	/**
+	 * connect to address and port specified in member {@link ClientInformation}
+	 * @return true if successfully connected and set up in/out streams else false
+	 */
+	public boolean connect() {		
 		try {
 			socket = new Socket(ip, port);
 
@@ -46,27 +51,42 @@ public class NetworkIO {
 			out = new DataOutputStream(new BufferedOutputStream(socket.getOutputStream()));
 		} catch (IOException e) {
 			e.printStackTrace();
+			return false;
 		}
+		
+		return true;
 	}
 	
 	public void send(String msg) {
+		if (!isActive) {
+			disconnect();
+			return;
+		}	
+		
 		try {
-			System.err.println("writing...");
 			out.writeUTF(msg);
-			System.err.println("written");
+			out.flush();
 		} catch (IOException e) {
-			e.printStackTrace();
+			System.err.println("Failed to send to server: " + msg);
 		}
 	}
 	
 	public String receive() {
+		if (!isActive) {
+			disconnect();
+			return "Lost Connection to Server\n";
+		}			
+		
 		String msg = "Error - server failed to read from socket";
 		try {
-			System.err.println("reading...");
 			msg = in.readUTF();
-			System.err.println("read");
 		} catch (IOException e) {
-			e.printStackTrace();
+			if (e.getClass().equals(SocketException.class)) {
+				isActive = false;
+				return "Lost Connection to Server\n";
+			}
+			else
+				e.printStackTrace();
 		}
 		
 		return msg;
@@ -76,18 +96,26 @@ public class NetworkIO {
 		isActive = false;
 		try {
 			out.close();
-		} catch (IOException e) {
-			e.printStackTrace();
+		} catch (Exception e) {
+			// unhandled exception. shutting down anyway
 		}
 		
 		try {
 			socket.close();
-		} catch (IOException e) {
-			e.printStackTrace();
+		} catch (Exception e) {
+			// unhandled exception. shutting down anyway
 		}
 	}
 	
+	public Socket getSocket() {
+		return socket;
+	}
+
 	public boolean isActive() {
 		return isActive;
+	}
+	
+	public void setActive(boolean newState) {
+		isActive = newState;
 	}
 }

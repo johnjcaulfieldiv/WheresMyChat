@@ -15,13 +15,6 @@ import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
-import java.net.URL;
-
 import javax.swing.JScrollPane;
 import javax.swing.JMenuBar;
 import javax.swing.JMenu;
@@ -57,12 +50,13 @@ public class ClientChatWindow extends JFrame {
 	private Thread networkReaderThread;
 	
 	private boolean shiftPressed = false;
+	private JMenuItem fileMenuItem_Connect;
 
 	public ClientChatWindow(ClientInformation clientInfo, NetworkIO net) {
 		this.clientInfo = clientInfo;
 		this.netIO = net;
 		
-		this.colorScheme = getColorSchemeFromFile(COLOR_FILENAME);
+		this.colorScheme = ColorScheme.getFromFile(COLOR_FILENAME);
 		if (colorScheme == null)
 			colorScheme = new ColorScheme();
 		
@@ -89,6 +83,14 @@ public class ClientChatWindow extends JFrame {
 				closeWindow();
 			}
 		});
+		
+		fileMenuItem_Connect = new JMenuItem("Reconnect to Server");
+		fileMenuItem_Connect.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				reconnectToServer();
+			}
+		});
+		fileMenu.add(fileMenuItem_Connect);
 		fileMenu.add(fileMenuItem_Exit);
 		
 		viewMenu = new JMenu("View");
@@ -175,7 +177,13 @@ public class ClientChatWindow extends JFrame {
 				"Welcome to chat, " + clientInfo.getDisplayName() + "!\n\n";
 		chatTextArea.setText(welcomeMessage);
 
-		startServerReader();
+		if (netIO.connect()) {
+			systemMessage("Connected to server\n");
+			
+			startServerReader();
+		}
+		else
+			systemMessage("Failed to connect to server\n");
 	}	
 	
 	private void setColors() {
@@ -197,6 +205,10 @@ public class ClientChatWindow extends JFrame {
 		messageTextArea.requestFocusInWindow();
 	}
 	
+	private void scrollChatAreaToBottom() {
+		chatTextArea.setCaretPosition(chatTextArea.getDocument().getLength()-1);
+	}
+	
 	public void handleCommand(String cmd) {
 		cmd = cmd.trim().substring(1);
 		
@@ -207,10 +219,13 @@ public class ClientChatWindow extends JFrame {
 			printHelp();
 		}
 		else if (cmd.equals("secret") || cmd.equals("easteregg")) {
-			systemMessage("You have discovered a secret command. Well played.");
+			systemMessage("You have discovered a secret command. Well played.\n");
 		}
 		else if (cmd.startsWith("color")) {
 			setColorSchemeWithDialog();
+		}
+		else if (cmd.equals("reconnect")) {
+			reconnectToServer();
 		}
 		else {
 			systemMessage("Invalid command - " + cmd);
@@ -219,19 +234,20 @@ public class ClientChatWindow extends JFrame {
 	}
 	
 	public void printHelp() {
-		systemMessage(HELP_STRING);
+		systemMessage(HELP_STRING + "\n");
 	}
 	
 	public void sendUserMessage(String msg) {
-		chatTextArea.setText(chatTextArea.getText() + 
-			WMCUtil.getTimeStamp() + " " + clientInfo.getDisplayName() + ": " + msg);
+		chatTextArea.append(WMCUtil.getTimeStamp() + " " + clientInfo.getDisplayName() + ": " + msg);
+		scrollChatAreaToBottom();
 		
 		// network
 		netIO.send(msg);
 	}
 	
 	public void systemMessage(String msg) {
-		chatTextArea.setText(chatTextArea.getText() + SYSTEM_TAG + ": " + msg + "\n");
+		chatTextArea.append(SYSTEM_TAG + " " + msg);
+		scrollChatAreaToBottom();
 	}
 	
 	/**
@@ -239,7 +255,8 @@ public class ClientChatWindow extends JFrame {
 	 */
 	public void closeWindow() {
 		netIO.disconnect();
-		this.writeColorSchemeToFile(COLOR_FILENAME);
+		
+		colorScheme.writeToFile(COLOR_FILENAME);
 		
 		try {
 			networkReaderThread.join(1000);
@@ -263,54 +280,28 @@ public class ClientChatWindow extends JFrame {
 		networkReaderThread = new Thread(r);
 		networkReaderThread.start();
 	}
-		
-	/**
-	 * Serializes current ColorScheme to a file
-	 * @param filename
-	 */
-	private void writeColorSchemeToFile(String filename) {
-
-		URL url = ClientChatWindow.class.getResource(filename);
-		
-		try { 
-            FileOutputStream file = new FileOutputStream(url.getPath()); 
-            ObjectOutputStream out = new ObjectOutputStream(file); 
-            
-            out.writeObject(colorScheme); 
-  
-            out.close(); 
-            file.close();
-            
-            System.out.println("Successfully wrote colorScheme to file");
-        } catch (IOException e) { 
-            e.printStackTrace();
-        } 
-	}
 	
 	/**
-	 * Deserializes ColorScheme from file
-	 * @param filename - path to file to be read from
-	 * @return {@link ColorScheme} object read from file
+	 * doesnt really work atm?
 	 */
-	private ColorScheme getColorSchemeFromFile(String filename) {
-
-		URL url = ClientChatWindow.class.getResource(filename);
+	private void reconnectToServer() {
+		netIO.disconnect();
 		
 		try {
-	        FileInputStream file = new FileInputStream(url.getPath());
-	        ObjectInputStream in = new ObjectInputStream (file); 
-
-	        ColorScheme cs = (ColorScheme) in.readObject(); 
-	
-	        in.close(); 
-	        file.close();
-	        
-            System.out.println("Successfully read colorScheme from file");
-	        
-	        return cs;
-	    }  catch (Exception e) { 
-	    	e.printStackTrace();
-	    	return null;
-	    }
+			networkReaderThread.join(1000);
+		} catch (InterruptedException e) {}
+		
+		try {
+			netIO = new NetworkIO(clientInfo);
+			if (netIO.connect()) {
+				systemMessage("Connected to server\n");
+				startServerReader();
+			}
+			else
+				systemMessage("Failed to connect to server\n");
+		} catch (Exception e) {
+			e.printStackTrace();
+			systemMessage("Error connecting. Server may be down\n");
+		}
 	}
 }
