@@ -16,6 +16,7 @@ import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
+import java.util.HashSet;
 import javax.swing.JScrollPane;
 import javax.swing.JMenuBar;
 import javax.swing.JMenu;
@@ -52,11 +53,15 @@ public class ClientChatWindow extends JFrame {
 	
 	private boolean shiftPressed = false;
 	private JMenuItem fileMenuItem_Connect;
+	
+	private HashSet<String> userList;
 
 	public ClientChatWindow(ClientInformation clientInfo, NetworkIO net) {
 		this.clientInfo = clientInfo;
 		this.netIO = net;
-		
+		userList = new HashSet<>();
+		userList.add(clientInfo.getDisplayName());
+
 		this.colorScheme = ColorScheme.getFromFile(COLOR_FILENAME);
 		if (colorScheme == null)
 			colorScheme = new ColorScheme();
@@ -183,8 +188,10 @@ public class ClientChatWindow extends JFrame {
 			
 			startServerReader();
 		}
-		else
+		else {
 			systemMessage("Failed to connect to server\n");
+			netIO.setActive(false);
+		}
 	}	
 	
 	private void setColors() {
@@ -207,7 +214,7 @@ public class ClientChatWindow extends JFrame {
 	}
 	
 	private void scrollChatAreaToBottom() {
-		chatTextArea.setCaretPosition(chatTextArea.getDocument().getLength()-1);
+		chatTextArea.setCaretPosition(chatTextArea.getDocument().getLength());
 	}
 	
 	public void handleCommand(String cmd) {
@@ -228,6 +235,9 @@ public class ClientChatWindow extends JFrame {
 		else if (cmd.equals("reconnect")) {
 			reconnectToServer();
 		}
+		else if (cmd.startsWith("who")) {
+			systemMessage(getUserListString());
+		}
 		else {
 			systemMessage("Invalid command - " + cmd);
 			printHelp();
@@ -242,16 +252,32 @@ public class ClientChatWindow extends JFrame {
 		chatTextArea.append(WMCUtil.getTimeStamp() + " " + clientInfo.getDisplayName() + ": " + msg);
 		scrollChatAreaToBottom();
 		
-		// network
-//		netIO.send(msg);
-		
 		NetworkMessage nm = new NetworkMessage(NetworkMessage.MessageType.CHAT, clientInfo.displayName, msg);
-		netIO.sendNetworkMessage(nm);
+		sendNetworkMessage(nm);
+	}
+	
+	public void sendNetworkMessage(NetworkMessage netMsg) {
+		netIO.sendNetworkMessage(netMsg);
+	}
+	
+	public synchronized void chatMessage(String msg) {
+		chatTextArea.append(msg);
+		scrollChatAreaToBottom();
 	}
 	
 	public synchronized void systemMessage(String msg) {
 		chatTextArea.append(SYSTEM_TAG + " " + msg);
 		scrollChatAreaToBottom();
+	}
+	
+	private String getUserListString() {
+		String users = null;
+		for (String user : userList)
+			if (users == null)
+				users = user;
+			else
+				users += ", " + user;
+		return users;
 	}
 	
 	/**
@@ -263,7 +289,8 @@ public class ClientChatWindow extends JFrame {
 		colorScheme.writeToFile(COLOR_FILENAME);
 		
 		try {
-			networkReaderThread.join(1000);
+			if (networkReaderThread != null)
+				networkReaderThread.join(1000);
 		} catch (InterruptedException e) {
 			e.printStackTrace();
 		}
@@ -285,20 +312,46 @@ public class ClientChatWindow extends JFrame {
 		networkReaderThread.start();
 	}
 
-	/**
-	 * currently just prints the message
-	 * @TODO do actual handling
-	 * @param msg
-	 */
 	private void handleNetworkMessage(NetworkMessage msg) {
-		systemMessage(msg.toString());
+		switch (msg.getType()) {
+			case CONNECTION:
+				userList.add(msg.getUser());
+				systemMessage(msg.getUser() + " connected\n");
+				break;
+			case DISCONNECTION:
+				userList.remove(msg.getUser());
+				systemMessage(msg.getUser() + " disconnected\n");
+				break;
+			case CHAT:
+				chatMessage(WMCUtil.getTimeStamp() + " " + msg.getUser() + ": " + msg.getBody());
+				break;
+			case INFO:
+				systemMessage(msg.getBody());
+				break;
+			case HEARTBEAT:
+				System.out.println("got heartbeat request");
+				sendNetworkMessage(new NetworkMessage(NetworkMessage.MessageType.HEARTBEAT, clientInfo.getDisplayName()));
+				System.out.println("sent heartbeat response");
+				break;
+			case ERROR:
+				System.err.println(msg);
+				netIO.setActive(false);
+				break;
+			default:
+				System.err.println("Received NetworkMessage with invalid type. Ignoring");
+				break;
+		}		
+		
+		//debug
+		System.err.println(msg.toString());
 	}
 
 	private void reconnectToServer() {
 		netIO.disconnect();
 		
 		try {
-			networkReaderThread.join(1000);
+			if (networkReaderThread != null)
+				networkReaderThread.join(1000);
 		} catch (InterruptedException e) {}
 		
 		try {

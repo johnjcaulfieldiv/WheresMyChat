@@ -1,16 +1,19 @@
 package com.WMC.Server;
 
 import java.io.IOException;
+import java.io.ObjectOutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
 
 public class Server {
 	public static final String MESSAGE_EOF_ERROR = "ERROR_EOF";
 	
-	private ArrayList<Socket> clients;
+	private List<Socket> clientSockets;
+	private HashMap<String, ObjectOutputStream> clientOutStreams;
 	private ServerSocket server;
-//	private String ip;
 	private int port;
 	
 	private boolean isBound;
@@ -31,7 +34,8 @@ public class Server {
 			throw new IllegalArgumentException();
 		}
 		isBound = false;
-		clients = new ArrayList<>();
+		clientSockets = new ArrayList<>();
+		clientOutStreams = new HashMap<>();
 	}
 	
 	public Server(int port) throws Exception {
@@ -40,7 +44,8 @@ public class Server {
 			throw new IllegalArgumentException();
 
 		isBound = false;
-		clients = new ArrayList<>();
+		clientSockets = new ArrayList<>();
+		clientOutStreams = new HashMap<>();
 	}
 	
 	public void start() {
@@ -57,11 +62,18 @@ public class Server {
         try {
         	System.out.println("Waiting for a client ...");
 
-	        clients.add(server.accept());
+        	Socket newClientSocket = server.accept();
+        	
+	        clientSockets.add(newClientSocket);
+	        
+	        ObjectOutputStream out = new ObjectOutputStream(newClientSocket.getOutputStream());
+	        out.flush();
+	        
+	        clientOutStreams.put(newClientSocket.getInetAddress().getHostAddress(), out);
 	        
 	        System.out.println("Client accepted\n");
 	        
-	        return clients.get(clients.size()-1);
+	        return newClientSocket;
         } catch (IOException e) {
         	e.printStackTrace();
         }
@@ -69,19 +81,34 @@ public class Server {
 	}
 	
 	public void stop() {
-		try {			
-			server.close();
-			isBound = false;
-		} catch (IOException e) {
-			e.printStackTrace();
+		isBound = false;
+		
+		for (ObjectOutputStream oos : clientOutStreams.values()) {
+			try {
+				oos.close();
+			} catch(Exception e) {}
 		}
+		
+		for (Socket skt : clientSockets) {
+			try {
+				skt.close();
+			} catch(Exception e) {}
+		}
+		
+		try {
+			server.close();
+		} catch (IOException e) {}
 	}
 	
 	public boolean hasClientConnections() {
-		return clients.size() > 0;
+		return clientSockets.size() > 0;
 	}
 	
 	public boolean isClosed() {
 		return isBound;
+	}
+
+	public HashMap<String, ObjectOutputStream> getClientOutStreams() {
+		return clientOutStreams;
 	}
 }

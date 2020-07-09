@@ -55,9 +55,9 @@ public class NetworkIO {
 
 			//in = new DataInputStream(new BufferedInputStream(socket.getInputStream()));
 			//out = new DataOutputStream(new BufferedOutputStream(socket.getOutputStream()));
-			objectOut = new ObjectOutputStream(new BufferedOutputStream(socket.getOutputStream()));
+			objectOut = new ObjectOutputStream(socket.getOutputStream());
 			objectOut.flush(); // flush the header
-			objectIn = new ObjectInputStream(new BufferedInputStream(socket.getInputStream()));
+			objectIn = new ObjectInputStream(socket.getInputStream());
 		} catch (IOException e) {
 			e.printStackTrace();
 			return false;
@@ -146,7 +146,7 @@ public class NetworkIO {
 		
 		try {
 			objectIn.close();
-		} catch (IOException e) {
+		} catch (IOException | NullPointerException e) {
 			// unhandled exception. shutting down anyway
 		}
 		

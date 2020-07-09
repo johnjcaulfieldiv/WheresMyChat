@@ -6,7 +6,7 @@ public class NetworkMessage implements Serializable {
 
 	private static final long serialVersionUID = 1L;
 
-	public static enum MessageType {CONNECTION, DISCONNECTION, CHAT, INFO, ERROR};
+	public static enum MessageType {CONNECTION, DISCONNECTION, CHAT, INFO, HEARTBEAT, ERROR};
 	
 	private MessageType type;
 	private String user;
@@ -65,6 +65,8 @@ public class NetworkMessage implements Serializable {
 			return this.user + ": " + this.body;
 		case INFO:
 			return "Info: " + this.body;
+		case HEARTBEAT:
+			return "Heartbeat: " + this.user;
 		case ERROR:
 			return "Error: " + this.body;
 		}

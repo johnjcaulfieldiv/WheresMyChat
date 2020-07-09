@@ -1,37 +1,32 @@
 package com.WMC.Server;
 
-import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
 import java.io.EOFException;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
+import java.util.HashMap;
 
 import com.WMC.NetworkMessage;
 
 public class ClientHandler implements Runnable {
 	
 	private Socket client;
-	private DataInputStream in;
-	private DataOutputStream out;
+	
 	private ObjectInputStream objectIn;
 	private ObjectOutputStream objectOut;
+	private HashMap<String, ObjectOutputStream> outStreams;
 	
-	public ClientHandler(Socket s) {
+	public ClientHandler(Socket s, HashMap<String, ObjectOutputStream> os) {
 		client = s;
+		outStreams = os;
+		objectOut = os.get(s.getInetAddress().getHostAddress());
 	}	
 	
 	@Override
 	public void run() {
 		try {
-			in = new DataInputStream(new BufferedInputStream(client.getInputStream()));
-			out = new DataOutputStream(new BufferedOutputStream(client.getOutputStream()));
-			objectOut = new ObjectOutputStream(new BufferedOutputStream(client.getOutputStream()));
-			objectOut.flush(); // flush the header
-			objectIn = new ObjectInputStream(new BufferedInputStream(client.getInputStream()));
+			objectIn = new ObjectInputStream(client.getInputStream());
 		} catch (IOException e) {
 			e.printStackTrace();
 			return;
@@ -44,7 +39,7 @@ public class ClientHandler implements Runnable {
 				   netMsg.getType() != NetworkMessage.MessageType.DISCONNECTION) {
 				System.out.println("recv: " + netMsg);
 				NetworkMessage response = new NetworkMessage(NetworkMessage.MessageType.CHAT, "servertron1000", "You said: " + netMsg.getBody());
-				writeNetworkMessage(response);
+				broadcastNetworkMessage(response);
 				System.out.println("reading...");
 				System.out.flush();
 				netMsg = readNetworkMessage();
@@ -60,31 +55,7 @@ public class ClientHandler implements Runnable {
 			}
 		}
 	}
-	
-	private String readLine() {
-		String message = "";
-		try {
-			message = in.readUTF();
 		
-		} catch (IOException e) {
-			if (e.getClass() != EOFException.class)
-				e.printStackTrace();
-			message = Server.MESSAGE_EOF_ERROR;
-		}
-		
-		return message;
-	}
-	
-	private void writeLine(String message) {
-		try {
-			out.writeUTF(message);
-			out.flush();
-			System.out.println("wrote: " + "Got your message: " + message);
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-	}
-	
 	private NetworkMessage readNetworkMessage() {
 		NetworkMessage message = null;
 		try {
@@ -107,6 +78,19 @@ public class ClientHandler implements Runnable {
 			objectOut.writeObject(msg);
 			objectOut.flush();
 			System.out.println("wrote: " + msg);
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+	
+	private synchronized void broadcastNetworkMessage(NetworkMessage msg) {
+		try {
+			for (String key : outStreams.keySet()) {
+				ObjectOutputStream oOut = outStreams.get(key);
+				oOut.writeObject(msg);
+				oOut.flush();
+				System.out.println("wrote to " + key + ": " + msg);
+			}
 		} catch (IOException e) {
 			e.printStackTrace();
 		}

@@ -1,5 +1,6 @@
 package com.WMC.Server;
 
+import java.net.Socket;
 import java.util.ArrayList;
 
 public class ServerApplication {
@@ -32,8 +33,9 @@ public class ServerApplication {
 			s.start();
 			
 			int connections = 0;
-			while (connections++ < MAX_CONNECTIONS) {				
-				ClientHandler handler = new ClientHandler(s.accept());
+			while (connections++ < MAX_CONNECTIONS) {		
+				Socket newClientSocket = s.accept();
+				ClientHandler handler = new ClientHandler(newClientSocket, s.getClientOutStreams());
 				Thread t = new Thread(handler);
 				threadList.add(t);
 				t.start();
