@@ -12,6 +12,7 @@ import com.WMC.NetworkMessage;
 public class ClientHandler implements Runnable {
 	
 	private Socket client;
+	private String clientName;
 	
 	private ObjectInputStream objectIn;
 	private ObjectOutputStream objectOut;
@@ -32,13 +33,25 @@ public class ClientHandler implements Runnable {
 			return;
 		}         
 		
+		// get username
+		NetworkMessage userMsg = readNetworkMessage();
+		assert userMsg.getType() == NetworkMessage.MessageType.CONNECTION;
+		System.out.println(userMsg);
+		clientName = userMsg.getUser();
+		outStreams.remove(client.getInetAddress().getHostAddress());
+		outStreams.put(clientName, objectOut);
+		System.out.println("Users:");
+		for (String u : outStreams.keySet()) {
+			System.out.println(u);
+		}
+		
 		try {
 			NetworkMessage netMsg = readNetworkMessage();
 			while (netMsg != null && 
 				   netMsg.getType() != NetworkMessage.MessageType.ERROR && 
 				   netMsg.getType() != NetworkMessage.MessageType.DISCONNECTION) {
-				System.out.println("recv: " + netMsg);
-				NetworkMessage response = new NetworkMessage(NetworkMessage.MessageType.CHAT, "servertron1000", "You said: " + netMsg.getBody());
+				System.out.println(netMsg);
+				NetworkMessage response = new NetworkMessage(NetworkMessage.MessageType.CHAT, netMsg.getUser(), netMsg.getBody());
 				broadcastNetworkMessage(response);
 				System.out.println("reading...");
 				System.out.flush();
@@ -48,7 +61,13 @@ public class ClientHandler implements Runnable {
 			e.printStackTrace();
 			return;
 		} finally {
-			try {
+			outStreams.remove(clientName);
+
+			NetworkMessage dc = new NetworkMessage(NetworkMessage.MessageType.DISCONNECTION);
+			dc.setUser(clientName);
+			broadcastNetworkMessage(dc);
+			
+			try {				
 				client.close();
 			} catch (IOException e) {
 				e.printStackTrace();

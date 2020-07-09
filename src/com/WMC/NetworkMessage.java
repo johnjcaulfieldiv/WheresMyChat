@@ -12,6 +12,12 @@ public class NetworkMessage implements Serializable {
 	private String user;
 	private String body;
 	
+	public NetworkMessage() {
+		this.type = null;
+		this.user = null;
+		this.body = null;
+	}
+	
 	public NetworkMessage(MessageType type) {
 		this.type = type;
 		user = null;

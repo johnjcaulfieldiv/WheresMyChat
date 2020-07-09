@@ -166,7 +166,7 @@ public class ClientChatWindow extends JFrame {
 						sendUserMessage(message);
 				}
 				else if (e.getKeyCode() == KeyEvent.VK_ENTER) {
-					messageTextArea.setText(messageTextArea.getText() + "\n");
+					messageTextArea.append("\n");
 				}
 				else if (e.getKeyCode() == KeyEvent.VK_SHIFT) {
 					shiftPressed = false;
@@ -187,6 +187,11 @@ public class ClientChatWindow extends JFrame {
 			systemMessage("Connected to server\n");
 			
 			startServerReader();
+			
+			NetworkMessage connectedMsg = new NetworkMessage();
+			connectedMsg.setType(NetworkMessage.MessageType.CONNECTION);
+			connectedMsg.setUser(clientInfo.getDisplayName());
+			sendNetworkMessage(connectedMsg);
 		}
 		else {
 			systemMessage("Failed to connect to server\n");
@@ -249,8 +254,8 @@ public class ClientChatWindow extends JFrame {
 	}
 	
 	public synchronized void sendUserMessage(String msg) {
-		chatTextArea.append(WMCUtil.getTimeStamp() + " " + clientInfo.getDisplayName() + ": " + msg);
-		scrollChatAreaToBottom();
+//		chatTextArea.append(WMCUtil.getTimeStamp() + " " + clientInfo.getDisplayName() + ": " + msg);
+//		scrollChatAreaToBottom();
 		
 		NetworkMessage nm = new NetworkMessage(NetworkMessage.MessageType.CHAT, clientInfo.displayName, msg);
 		sendNetworkMessage(nm);
