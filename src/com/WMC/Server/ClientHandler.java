@@ -6,13 +6,19 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.EOFException;
 import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.net.Socket;
+
+import com.WMC.NetworkMessage;
 
 public class ClientHandler implements Runnable {
 	
 	private Socket client;
 	private DataInputStream in;
 	private DataOutputStream out;
+	private ObjectInputStream objectIn;
+	private ObjectOutputStream objectOut;
 	
 	public ClientHandler(Socket s) {
 		client = s;
@@ -23,20 +29,25 @@ public class ClientHandler implements Runnable {
 		try {
 			in = new DataInputStream(new BufferedInputStream(client.getInputStream()));
 			out = new DataOutputStream(new BufferedOutputStream(client.getOutputStream()));
+			objectOut = new ObjectOutputStream(new BufferedOutputStream(client.getOutputStream()));
+			objectOut.flush(); // flush the header
+			objectIn = new ObjectInputStream(new BufferedInputStream(client.getInputStream()));
 		} catch (IOException e) {
 			e.printStackTrace();
 			return;
 		}         
 		
 		try {
-			String clientMsg = readLine();
-			while (!clientMsg.equalsIgnoreCase("exit") && !clientMsg.equals(Server.MESSAGE_EOF_ERROR)) {
-				System.out.println(clientMsg);
-				System.out.println("writing...");
-				writeLine("Got your message: " + clientMsg);
+			NetworkMessage netMsg = readNetworkMessage();
+			while (netMsg != null && 
+				   netMsg.getType() != NetworkMessage.MessageType.ERROR && 
+				   netMsg.getType() != NetworkMessage.MessageType.DISCONNECTION) {
+				System.out.println("recv: " + netMsg);
+				NetworkMessage response = new NetworkMessage(NetworkMessage.MessageType.CHAT, "servertron1000", "You said: " + netMsg.getBody());
+				writeNetworkMessage(response);
 				System.out.println("reading...");
 				System.out.flush();
-				clientMsg = readLine();
+				netMsg = readNetworkMessage();
 			}
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -69,6 +80,33 @@ public class ClientHandler implements Runnable {
 			out.writeUTF(message);
 			out.flush();
 			System.out.println("wrote: " + "Got your message: " + message);
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+	
+	private NetworkMessage readNetworkMessage() {
+		NetworkMessage message = null;
+		try {
+			while (message == null) {
+				message = (NetworkMessage) objectIn.readObject();
+				Thread.sleep(100);
+			}
+		
+		} catch (IOException | ClassNotFoundException | InterruptedException e) {
+			if (e.getClass() != EOFException.class)
+				e.printStackTrace();
+			message = null;
+		}
+		
+		return message;
+	}
+	
+	private void writeNetworkMessage(NetworkMessage msg) {
+		try {
+			objectOut.writeObject(msg);
+			objectOut.flush();
+			System.out.println("wrote: " + msg);
 		} catch (IOException e) {
 			e.printStackTrace();
 		}

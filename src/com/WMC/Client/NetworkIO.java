@@ -5,8 +5,12 @@ import java.io.BufferedOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.net.Socket;
 import java.net.SocketException;
+
+import com.WMC.NetworkMessage;
 
 public class NetworkIO {
 	private ClientInformation clientInfo;
@@ -17,6 +21,8 @@ public class NetworkIO {
 
 	DataInputStream  in;
 	DataOutputStream out;
+	ObjectOutputStream objectOut;
+	ObjectInputStream objectIn;
 	
 	private boolean isActive;
 			
@@ -47,8 +53,11 @@ public class NetworkIO {
 		try {
 			socket = new Socket(ip, port);
 
-			in = new DataInputStream(new BufferedInputStream(socket.getInputStream()));
-			out = new DataOutputStream(new BufferedOutputStream(socket.getOutputStream()));
+			//in = new DataInputStream(new BufferedInputStream(socket.getInputStream()));
+			//out = new DataOutputStream(new BufferedOutputStream(socket.getOutputStream()));
+			objectOut = new ObjectOutputStream(new BufferedOutputStream(socket.getOutputStream()));
+			objectOut.flush(); // flush the header
+			objectIn = new ObjectInputStream(new BufferedInputStream(socket.getInputStream()));
 		} catch (IOException e) {
 			e.printStackTrace();
 			return false;
@@ -92,11 +101,52 @@ public class NetworkIO {
 		return msg;
 	}
 	
+	public void sendNetworkMessage(NetworkMessage msg) {
+		if (!isActive) {
+			disconnect();
+			return;
+		}
+		
+		try {
+			objectOut.writeObject(msg);
+			objectOut.flush();
+		} catch (IOException e) {
+			System.err.println("Failed to send to server: " + msg);
+		}
+	}
+	
+	public NetworkMessage receiveNetworkMessage() {
+		if (!isActive) {
+			disconnect();
+			return new NetworkMessage(NetworkMessage.MessageType.ERROR, "Lost Connection to Server\n");
+		}			
+		
+		NetworkMessage msg = null;
+		try {			
+			msg = (NetworkMessage) objectIn.readObject();
+		} catch (IOException | ClassNotFoundException e) {
+			if (e.getClass().equals(SocketException.class)) {
+				isActive = false;
+				msg = new NetworkMessage(NetworkMessage.MessageType.ERROR, "Lost Connection to Server\n");
+			}
+			else
+				e.printStackTrace();
+		}
+		
+		return msg;
+	}
+	
 	public void disconnect() {
 		isActive = false;
 		try {
-			out.close();
+			objectOut.close();
 		} catch (Exception e) {
+			// unhandled exception. shutting down anyway
+		}
+		
+		try {
+			objectIn.close();
+		} catch (IOException e) {
 			// unhandled exception. shutting down anyway
 		}
 		

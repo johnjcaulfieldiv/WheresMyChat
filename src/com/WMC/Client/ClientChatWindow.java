@@ -5,6 +5,7 @@ import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.border.EmptyBorder;
 
+import com.WMC.NetworkMessage;
 import com.WMC.WMCUtil;
 
 import java.awt.GridBagLayout;
@@ -237,15 +238,18 @@ public class ClientChatWindow extends JFrame {
 		systemMessage(HELP_STRING + "\n");
 	}
 	
-	public void sendUserMessage(String msg) {
+	public synchronized void sendUserMessage(String msg) {
 		chatTextArea.append(WMCUtil.getTimeStamp() + " " + clientInfo.getDisplayName() + ": " + msg);
 		scrollChatAreaToBottom();
 		
 		// network
-		netIO.send(msg);
+//		netIO.send(msg);
+		
+		NetworkMessage nm = new NetworkMessage(NetworkMessage.MessageType.CHAT, clientInfo.displayName, msg);
+		netIO.sendNetworkMessage(nm);
 	}
 	
-	public void systemMessage(String msg) {
+	public synchronized void systemMessage(String msg) {
 		chatTextArea.append(SYSTEM_TAG + " " + msg);
 		scrollChatAreaToBottom();
 	}
@@ -272,18 +276,24 @@ public class ClientChatWindow extends JFrame {
 			@Override
 			public void run() {
 				while (netIO.isActive()) {
-					String networkMsg = netIO.receive();
-					systemMessage(networkMsg);
+					NetworkMessage networkMsg = netIO.receiveNetworkMessage();
+					handleNetworkMessage(networkMsg);
 				}
 			}
 		};
 		networkReaderThread = new Thread(r);
 		networkReaderThread.start();
 	}
-	
+
 	/**
-	 * Doesn't really work atm?
+	 * currently just prints the message
+	 * @TODO do actual handling
+	 * @param msg
 	 */
+	private void handleNetworkMessage(NetworkMessage msg) {
+		systemMessage(msg.toString());
+	}
+
 	private void reconnectToServer() {
 		netIO.disconnect();
 		
