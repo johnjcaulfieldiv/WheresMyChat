@@ -40,13 +40,16 @@ public class ClientHandler implements Runnable {
 		clientName = userMsg.getUser();
 		outStreams.remove(client.getInetAddress().getHostAddress());
 		outStreams.put(clientName, objectOut);
+		broadcastUserList();
+		
 		System.out.println("Users:");
 		for (String u : outStreams.keySet()) {
 			System.out.println(u);
 		}
-		
+				
 		try {
 			NetworkMessage netMsg = readNetworkMessage();
+			
 			while (netMsg != null && 
 				   netMsg.getType() != NetworkMessage.MessageType.ERROR && 
 				   netMsg.getType() != NetworkMessage.MessageType.DISCONNECTION) {
@@ -58,6 +61,7 @@ public class ClientHandler implements Runnable {
 				netMsg = readNetworkMessage();
 			}
 		} catch (Exception e) {
+			broadcastClientDisconnected();
 			e.printStackTrace();
 			return;
 		} finally {
@@ -84,6 +88,7 @@ public class ClientHandler implements Runnable {
 			}
 		
 		} catch (IOException | ClassNotFoundException | InterruptedException e) {
+			broadcastClientDisconnected();
 			if (e.getClass() != EOFException.class)
 				e.printStackTrace();
 			message = null;
@@ -113,5 +118,27 @@ public class ClientHandler implements Runnable {
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
+	}
+	
+	private void broadcastUserList() {
+		String users = "";
+		for (String key : outStreams.keySet()) {
+			users += key + NetworkMessage.DELIMITER;
+		}
+		NetworkMessage userListMessage = new NetworkMessage(NetworkMessage.MessageType.CONNECTION);
+		userListMessage.setBody(users);
+		broadcastNetworkMessage(userListMessage);
+	}
+	
+	private void broadcastClientConnected() {
+		NetworkMessage conn = new NetworkMessage(NetworkMessage.MessageType.CONNECTION);
+		conn.setUser(this.clientName);
+		this.broadcastNetworkMessage(conn);
+	}
+	
+	private void broadcastClientDisconnected() {
+		NetworkMessage disc = new NetworkMessage(NetworkMessage.MessageType.DISCONNECTION);
+		disc.setUser(this.clientName);
+		this.broadcastNetworkMessage(disc);
 	}
 }

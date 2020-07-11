@@ -188,10 +188,7 @@ public class ClientChatWindow extends JFrame {
 			
 			startServerReader();
 			
-			NetworkMessage connectedMsg = new NetworkMessage();
-			connectedMsg.setType(NetworkMessage.MessageType.CONNECTION);
-			connectedMsg.setUser(clientInfo.getDisplayName());
-			sendNetworkMessage(connectedMsg);
+			sendConnectionToServer();
 		}
 		else {
 			systemMessage("Failed to connect to server\n");
@@ -320,8 +317,13 @@ public class ClientChatWindow extends JFrame {
 	private void handleNetworkMessage(NetworkMessage msg) {
 		switch (msg.getType()) {
 			case CONNECTION:
-				userList.add(msg.getUser());
-				systemMessage(msg.getUser() + " connected\n");
+				String [] users = msg.getBody().split(NetworkMessage.DELIMITER);
+				for (String u : users) {
+					if (!userList.contains(u)) {
+						userList.add(u);
+						systemMessage(u + " connected\n");
+					}
+				}
 				break;
 			case DISCONNECTION:
 				userList.remove(msg.getUser());
@@ -350,6 +352,13 @@ public class ClientChatWindow extends JFrame {
 		//debug
 		System.err.println(msg.toString());
 	}
+	
+	private void sendConnectionToServer() {
+		NetworkMessage connectedMsg = new NetworkMessage();
+		connectedMsg.setType(NetworkMessage.MessageType.CONNECTION);
+		connectedMsg.setUser(clientInfo.getDisplayName());
+		sendNetworkMessage(connectedMsg);
+	}
 
 	private void reconnectToServer() {
 		netIO.disconnect();
@@ -364,6 +373,7 @@ public class ClientChatWindow extends JFrame {
 			if (netIO.connect()) {
 				systemMessage("Connected to server\n");
 				startServerReader();
+				sendConnectionToServer();
 			}
 			else
 				systemMessage("Failed to connect to server\n");
