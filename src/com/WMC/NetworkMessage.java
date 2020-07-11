@@ -6,6 +6,8 @@ public class NetworkMessage implements Serializable {
 
 	private static final long serialVersionUID = 1L;
 
+	public static final String DELIMITER = "@@@";
+	
 	public static enum MessageType {CONNECTION, DISCONNECTION, CHAT, INFO, HEARTBEAT, ERROR};
 	
 	private MessageType type;
