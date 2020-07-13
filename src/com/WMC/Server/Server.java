@@ -7,9 +7,15 @@ import java.net.Socket;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
+import com.WMC.WMCUtil;
 
 public class Server {
 	public static final String MESSAGE_EOF_ERROR = "ERROR_EOF";
+	
+	private Logger LOGGER;
 	
 	private List<Socket> clientSockets;
 	private HashMap<String, ObjectOutputStream> clientOutStreams;
@@ -17,27 +23,7 @@ public class Server {
 	private int port;
 	
 	private boolean isBound;
-	
-	public Server(String port) throws Exception {
-		
-//		if (ip.equals("localhost"))
-//			this.ip = "127.0.0.1";
-//		else
-//			this.ip = ip;
-		
-		try {
-			this.port = Integer.parseInt(port);
-			if (this.port < 1100 || this.port > 65535)
-				throw new IllegalArgumentException();
-		} catch (Exception e) {
-			e.printStackTrace();
-			throw new IllegalArgumentException();
-		}
-		isBound = false;
-		clientSockets = new ArrayList<>();
-		clientOutStreams = new HashMap<>();
-	}
-	
+
 	public Server(int port) throws Exception {
 		this.port = port;	
 		if (this.port < 1100 || this.port > 65535)
@@ -46,22 +32,22 @@ public class Server {
 		isBound = false;
 		clientSockets = new ArrayList<>();
 		clientOutStreams = new HashMap<>();
+		
+		LOGGER = WMCUtil.createDefaultLogger(Server.class.getName());
 	}
 	
 	public void start() {
 		try {
 			server = new ServerSocket(this.port);	
 			isBound = true;
-			System.out.println("Server started");
+			LOGGER.log(Level.INFO, "Server started");
 		} catch (IOException e) {
-			e.printStackTrace();
+			LOGGER.log(Level.SEVERE, WMCUtil.stackTraceToString(e));
 		}
 	}
 	
 	public Socket accept() {		  
         try {
-        	System.out.println("Waiting for a client ...");
-
         	Socket newClientSocket = server.accept();
         	
 	        clientSockets.add(newClientSocket);
@@ -71,11 +57,11 @@ public class Server {
 	        
 	        clientOutStreams.put(newClientSocket.getInetAddress().getHostAddress(), out);
 	        
-	        System.out.println("Client accepted\n");
+			LOGGER.log(Level.INFO, "Client accepted: " + newClientSocket.getInetAddress().getHostAddress());
 	        
 	        return newClientSocket;
         } catch (IOException e) {
-        	e.printStackTrace();
+        	LOGGER.log(Level.SEVERE, WMCUtil.stackTraceToString(e));
         }
         return null;
 	}
@@ -98,6 +84,8 @@ public class Server {
 		try {
 			server.close();
 		} catch (IOException e) {}
+		
+		LOGGER.log(Level.INFO, "Server stopped");
 	}
 	
 	public boolean hasClientConnections() {

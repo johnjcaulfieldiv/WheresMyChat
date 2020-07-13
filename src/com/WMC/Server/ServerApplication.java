@@ -14,7 +14,7 @@ public class ServerApplication {
 		}
 		
 		if ("-h".equals(args[0]) || "-help".equals(args[0])) {
-			System.out.println("Usage: ServerApplication [port]");
+			System.err.println("Usage: ServerApplication [port]");
 			return;
 		}
 		

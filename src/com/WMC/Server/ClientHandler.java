@@ -6,13 +6,19 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
 import java.util.HashMap;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import com.WMC.NetworkMessage;
+import com.WMC.WMCUtil;
 
 public class ClientHandler implements Runnable {
 	
+	private Logger LOGGER;
+	
 	private Socket client;
 	private String clientName;
+	private boolean isActive;
 	
 	private ObjectInputStream objectIn;
 	private ObjectOutputStream objectOut;
@@ -22,6 +28,9 @@ public class ClientHandler implements Runnable {
 		client = s;
 		outStreams = os;
 		objectOut = os.get(s.getInetAddress().getHostAddress());
+		isActive = true;
+
+		LOGGER = WMCUtil.createDefaultLogger(ClientHandler.class.getName());
 	}	
 	
 	@Override
@@ -29,54 +38,78 @@ public class ClientHandler implements Runnable {
 		try {
 			objectIn = new ObjectInputStream(client.getInputStream());
 		} catch (IOException e) {
-			e.printStackTrace();
+			LOGGER.log(Level.SEVERE, WMCUtil.stackTraceToString(e));
+			isActive = false;
 			return;
 		}         
 		
 		// get username
 		NetworkMessage userMsg = readNetworkMessage();
-		assert userMsg.getType() == NetworkMessage.MessageType.CONNECTION;
-		System.out.println(userMsg);
 		clientName = userMsg.getUser();
+
+		LOGGER.log(Level.INFO, client.getInetAddress().getHostAddress() + " connected with username: " + clientName);
+		
 		outStreams.remove(client.getInetAddress().getHostAddress());
 		outStreams.put(clientName, objectOut);
 		broadcastUserList();
-		
-		System.out.println("Users:");
-		for (String u : outStreams.keySet()) {
-			System.out.println(u);
-		}
 				
 		try {
-			NetworkMessage netMsg = readNetworkMessage();
-			
-			while (netMsg != null && 
+			NetworkMessage netMsg = readNetworkMessage();			
+			while (isActive && 
+				   netMsg != null && 
 				   netMsg.getType() != NetworkMessage.MessageType.ERROR && 
 				   netMsg.getType() != NetworkMessage.MessageType.DISCONNECTION) {
-				System.out.println(netMsg);
-				NetworkMessage response = new NetworkMessage(NetworkMessage.MessageType.CHAT, netMsg.getUser(), netMsg.getBody());
-				broadcastNetworkMessage(response);
-				System.out.println("reading...");
-				System.out.flush();
+				
+				LOGGER.info(netMsg.toString());
+				
+				// @TODO handle all message types instead of echoing
+				handleClientMessage(netMsg);
+				
 				netMsg = readNetworkMessage();
 			}
 		} catch (Exception e) {
-			broadcastClientDisconnected();
-			e.printStackTrace();
+			if (isActive)
+				broadcastClientDisconnected();
+			isActive = false;
+			LOGGER.severe(WMCUtil.stackTraceToString(e));
 			return;
 		} finally {
 			outStreams.remove(clientName);
 
-			NetworkMessage dc = new NetworkMessage(NetworkMessage.MessageType.DISCONNECTION);
-			dc.setUser(clientName);
-			broadcastNetworkMessage(dc);
+			if (isActive)
+				broadcastClientDisconnected();
+			isActive = false;
 			
 			try {				
 				client.close();
 			} catch (IOException e) {
-				e.printStackTrace();
+				LOGGER.warning(WMCUtil.stackTraceToString(e));
 			}
 		}
+	}
+	
+	// @TODO add functionality to all message types
+	private void handleClientMessage(NetworkMessage msg) {
+		switch(msg.getType()) {
+			case CONNECTION:
+				break;
+			case DISCONNECTION:
+				break;
+			case CHAT:
+				break;
+			case INFO:
+				break;
+			case HEARTBEAT:
+				break;
+			case ERROR:
+				break;
+			default:
+				LOGGER.warning(msg.getUser() + " + sent invalid MessageType");
+		}
+		
+		// echo
+		NetworkMessage echo = new NetworkMessage(NetworkMessage.MessageType.CHAT, msg.getUser(), msg.getBody());
+		broadcastNetworkMessage(echo);
 	}
 		
 	private NetworkMessage readNetworkMessage() {
@@ -87,40 +120,35 @@ public class ClientHandler implements Runnable {
 				Thread.sleep(100);
 			}
 		
-		} catch (IOException | ClassNotFoundException | InterruptedException e) {
-			broadcastClientDisconnected();
+		} catch (Exception e) {
+			if (isActive)
+				broadcastClientDisconnected();
+			isActive = false;
 			if (e.getClass() != EOFException.class)
-				e.printStackTrace();
+				LOGGER.severe(WMCUtil.stackTraceToString(e));
 			message = null;
 		}
 		
 		return message;
 	}
 	
-	private void writeNetworkMessage(NetworkMessage msg) {
-		try {
-			objectOut.writeObject(msg);
-			objectOut.flush();
-			System.out.println("wrote: " + msg);
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-	}
-	
-	private synchronized void broadcastNetworkMessage(NetworkMessage msg) {
+	private synchronized void broadcastNetworkMessage(NetworkMessage msg) {		
 		try {
 			for (String key : outStreams.keySet()) {
 				ObjectOutputStream oOut = outStreams.get(key);
 				oOut.writeObject(msg);
 				oOut.flush();
-				System.out.println("wrote to " + key + ": " + msg);
+				LOGGER.info("wrote to " + key + ": " + msg);
 			}
-		} catch (IOException e) {
-			e.printStackTrace();
+		} catch (Exception e) {
+			if (isActive && msg.getType() != NetworkMessage.MessageType.DISCONNECTION)
+				broadcastClientDisconnected();
+			isActive = false;
+			LOGGER.severe(WMCUtil.stackTraceToString(e));
 		}
 	}
 	
-	private void broadcastUserList() {
+	private void broadcastUserList() {		
 		String users = "";
 		for (String key : outStreams.keySet()) {
 			users += key + NetworkMessage.DELIMITER;
@@ -130,13 +158,13 @@ public class ClientHandler implements Runnable {
 		broadcastNetworkMessage(userListMessage);
 	}
 	
-	private void broadcastClientConnected() {
+	private void broadcastClientConnected() {		
 		NetworkMessage conn = new NetworkMessage(NetworkMessage.MessageType.CONNECTION);
 		conn.setUser(this.clientName);
 		this.broadcastNetworkMessage(conn);
 	}
 	
-	private void broadcastClientDisconnected() {
+	private void broadcastClientDisconnected() {		
 		NetworkMessage disc = new NetworkMessage(NetworkMessage.MessageType.DISCONNECTION);
 		disc.setUser(this.clientName);
 		this.broadcastNetworkMessage(disc);
