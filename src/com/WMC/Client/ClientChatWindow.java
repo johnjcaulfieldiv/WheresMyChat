@@ -54,6 +54,7 @@ public class ClientChatWindow extends JFrame {
 	
 	private NetworkIO netIO;
 	private Thread networkReaderThread;
+	private Thread heartbeatThread;
 	
 	private boolean shiftPressed = false;
 	private JMenuItem fileMenuItem_Connect;
@@ -193,6 +194,8 @@ public class ClientChatWindow extends JFrame {
 			startServerReader();
 			
 			sendConnectionToServer();
+
+			startHeartbeat();
 		}
 		else {
 			systemMessage("Failed to connect to server\n");
@@ -287,7 +290,8 @@ public class ClientChatWindow extends JFrame {
 	 * handle cleanup then dispose of ClientChatWindow
 	 */
 	public void closeWindow() {
-		sendDisconnectionToServer();
+		if (netIO.isActive())
+			sendDisconnectionToServer();
 		
 		netIO.disconnect();
 		
@@ -296,6 +300,13 @@ public class ClientChatWindow extends JFrame {
 		try {
 			if (networkReaderThread != null)
 				networkReaderThread.join(1000);
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		}
+		
+		try {
+			if (heartbeatThread != null)
+				heartbeatThread.join(1000);
 		} catch (InterruptedException e) {
 			e.printStackTrace();
 		}
@@ -315,13 +326,33 @@ public class ClientChatWindow extends JFrame {
 		});
 		networkReaderThread.start();
 	}
+	
+	private void startHeartbeat() {
+		networkReaderThread = new Thread(new Runnable() {
+			@Override
+			public void run() {
+				while (netIO.isActive()) {
+					NetworkMessage heartbeatMsg = new NetworkMessage(NetworkMessage.MessageType.HEARTBEAT);
+					heartbeatMsg.setUser(clientInfo.getDisplayName());
+					netIO.sendNetworkMessage(heartbeatMsg);
+					try {
+						Thread.sleep(WMCUtil.HEARTBEAT_RATE / 2);
+					} catch (InterruptedException e) {}
+				}
+			}
+		});
+		networkReaderThread.start();
+	}
 
 	private void handleNetworkMessage(NetworkMessage msg) {
 		switch (msg.getType()) {
 			case CONNECTION:
 				if (msg.getBody() == null) {
 					if (!msg.getUser().equals(clientInfo.getDisplayName())) {
-						systemMessage(msg.getUser() + " connected\n");
+						if (!userList.contains(msg.getUser())) {
+							userList.add(msg.getUser());
+							systemMessage(msg.getUser() + " connected\n");	
+						}
 					}
 					break;
 				}
@@ -335,10 +366,8 @@ public class ClientChatWindow extends JFrame {
 				}
 				break;
 			case DISCONNECTION:
-				if (userList.contains(msg.getUser())) {
-					userList.remove(msg.getUser());
+				if (userList.remove(msg.getUser()))
 					systemMessage(msg.getUser() + " disconnected\n");
-				}
 				break;
 			case CHAT:
 				chatMessage(WMCUtil.getTimeStamp() + " " + msg.getUser() + ": " + msg.getBody());
@@ -356,6 +385,8 @@ public class ClientChatWindow extends JFrame {
 				netIO.setActive(false);
 				if (msg.getUser() != null && msg.getUser().equals("[ SERVER ]"))
 					systemMessage(msg.getBody());
+				else
+					systemMessage("Lost connection to server\n");
 				break;
 			default:
 				LOGGER.warning("Received NetworkMessage with invalid type. Ignoring");

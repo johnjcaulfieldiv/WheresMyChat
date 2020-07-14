@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -24,11 +25,15 @@ public class ClientHandler implements Runnable {
 	private ObjectOutputStream objectOut;
 	private HashMap<String, ObjectOutputStream> outStreams;
 	
+	private Thread heartbeatManager;
+	private Date previousHeartbeat;
+	
 	public ClientHandler(Socket s, HashMap<String, ObjectOutputStream> os) {
 		client = s;
 		outStreams = os;
 		objectOut = os.get(s.getInetAddress().getHostAddress());
 		isActive = true;
+		previousHeartbeat = new Date();
 
 		LOGGER = WMCUtil.createDefaultLogger(ClientHandler.class.getName());
 	}
@@ -41,7 +46,7 @@ public class ClientHandler implements Runnable {
 			LOGGER.log(Level.SEVERE, WMCUtil.stackTraceToString(e));
 			isActive = false;
 			return;
-		}         
+		}
 		
 		// get username
 		NetworkMessage userMsg = readNetworkMessage();
@@ -54,6 +59,8 @@ public class ClientHandler implements Runnable {
 		
 		sendClientUserList();
 		broadcastClientConnected();
+		
+		startHeartbeatManager();
 				
 		try {
 			NetworkMessage netMsg = readNetworkMessage();			
@@ -62,9 +69,6 @@ public class ClientHandler implements Runnable {
 				   netMsg.getType() != NetworkMessage.MessageType.ERROR && 
 				   netMsg.getType() != NetworkMessage.MessageType.DISCONNECTION) {
 				
-				LOGGER.info(netMsg.toString());
-				
-				// @TODO handle all message types instead of echoing
 				handleClientMessage(netMsg);
 				
 				netMsg = readNetworkMessage();
@@ -90,8 +94,8 @@ public class ClientHandler implements Runnable {
 		}
 	}
 	
-	// @TODO add functionality to all message types
-	private void handleClientMessage(NetworkMessage msg) {
+	// @TODO add functionality to all used message types
+	private void handleClientMessage(NetworkMessage msg) {		
 		switch(msg.getType()) {
 			case CONNECTION:
 				break;
@@ -100,22 +104,39 @@ public class ClientHandler implements Runnable {
 				isActive = false;
 				break;
 			case CHAT:
+				broadcastNetworkMessage(msg);
 				break;
 			case INFO:
 				break;
 			case HEARTBEAT:
+				previousHeartbeat = new Date();
 				break;
 			case ERROR:
+				LOGGER.severe(clientName + " sent ERROR message: " + msg.toString());
 				break;
 			default:
 				LOGGER.warning(msg.getUser() + " + sent invalid MessageType");
 		}
-		
-		// echo
-		if (isActive) {
-			NetworkMessage echo = new NetworkMessage(NetworkMessage.MessageType.CHAT, msg.getUser(), msg.getBody());
-			broadcastNetworkMessage(echo);
-		}
+	}
+	
+	private void startHeartbeatManager() {
+		Thread hbm = new Thread(new Runnable() {
+			@Override
+			public void run() {
+				while (isActive) {
+					long currentTime = new Date().getTime();
+					long heartbeatTime = previousHeartbeat.getTime();
+					if (currentTime - heartbeatTime > WMCUtil.HEARTBEAT_RATE) {
+						LOGGER.info(clientName + " has timed out");
+						isActive = false;
+					}
+					try {
+						Thread.sleep(WMCUtil.HEARTBEAT_RATE / 5);
+					} catch (InterruptedException e) {}
+				}
+			}
+		});
+		hbm.start();
 	}
 		
 	private NetworkMessage readNetworkMessage() {
@@ -175,6 +196,7 @@ public class ClientHandler implements Runnable {
 		sendClientMessage(userListMessage);
 	}
 	
+	@SuppressWarnings("unused")
 	private void broadcastUserList() {		
 		String users = "";
 		for (String key : outStreams.keySet()) {

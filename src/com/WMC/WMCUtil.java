@@ -18,6 +18,8 @@ public class WMCUtil {
 	private static final SimpleDateFormat DATETIME_FORMAT = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
 	private static final SimpleDateFormat FILENAME_DATETIME_FORMAT = new SimpleDateFormat("yyyy-MM-dd-HH-mm-ss");
 	
+	public static final int HEARTBEAT_RATE = 10000; // in milliseconds
+	
 	 /**
 	 * @return Current time in form: [HH:mm:ss]
 	 */
