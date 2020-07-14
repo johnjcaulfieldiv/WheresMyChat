@@ -1,20 +1,27 @@
 package com.WMC.Client;
 
 import java.awt.EventQueue;
+import java.util.logging.Logger;
+
 import javax.swing.UIManager;
+
+import com.WMC.WMCUtil;
 
 public class ClientApplication {
 
 	public static void main(String [] args) {
 		
+		Logger LOGGER = WMCUtil.createDefaultLogger(ClientApplication.class.getName());
+		
 		try {
 			UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
 		} catch (Exception e) {
-			e.printStackTrace();
+			LOGGER.severe(WMCUtil.stackTraceToString(e));
 		}
 		
 		ClientInformation clientInfo = new ClientInformation();
 		
+		LOGGER.info("Starting ClientInitializeWindow");
 		EventQueue.invokeLater(new Runnable() {
 			@Override
 			public void run() {
@@ -30,33 +37,19 @@ public class ClientApplication {
 			try {
 				Thread.sleep(500, 0);
 			} catch (InterruptedException e) {
-				e.printStackTrace();
+				LOGGER.warning(WMCUtil.stackTraceToString(e));
 			}
 		}
+
+		LOGGER.info("ClientInitializeWindow exited");
 		
-		/* debug */
 		StringBuilder statusSB = new StringBuilder("ClientInformation initialized to:\n");
 		statusSB.append("Display Name  : ").append(clientInfo.getDisplayName()).append("\n");
 		statusSB.append("Server Address: ").append(clientInfo.getServerAddress()).append("\n");
 		statusSB.append("Server Port   : ").append(clientInfo.getServerPort()).append("\n");
-		System.out.println(statusSB.toString());
-		/* end debug */
+		LOGGER.info(statusSB.toString());
 		
-//		try {
-//			NetworkIO net = new NetworkIO(clientInfo);
-//			net.connect();
-//			Scanner scan = new Scanner(System.in);
-//			while (true) {
-//				String msg = scan.nextLine();
-//				net.send(msg);
-//				if (msg.equalsIgnoreCase("exit"))
-//					break;
-//			}
-//			net.disconnect();
-//		} catch (Exception e) {
-//			e.printStackTrace();
-//		}
-		
+		LOGGER.info("Starting ClientChatWindow");
 		EventQueue.invokeLater(new Runnable() {
 			public void run() {
 				try {

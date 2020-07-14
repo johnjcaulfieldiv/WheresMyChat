@@ -94,6 +94,8 @@ public class ClientHandler implements Runnable {
 			case CONNECTION:
 				break;
 			case DISCONNECTION:
+				broadcastClientDisconnected();
+				isActive = false;
 				break;
 			case CHAT:
 				break;
@@ -108,8 +110,10 @@ public class ClientHandler implements Runnable {
 		}
 		
 		// echo
-		NetworkMessage echo = new NetworkMessage(NetworkMessage.MessageType.CHAT, msg.getUser(), msg.getBody());
-		broadcastNetworkMessage(echo);
+		if (isActive) {
+			NetworkMessage echo = new NetworkMessage(NetworkMessage.MessageType.CHAT, msg.getUser(), msg.getBody());
+			broadcastNetworkMessage(echo);
+		}
 	}
 		
 	private NetworkMessage readNetworkMessage() {

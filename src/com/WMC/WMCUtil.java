@@ -80,7 +80,7 @@ public class WMCUtil {
 		Logger LOGGER = Logger.getLogger(name);
 		Handler fileHandler = null;
 		try {
-			String logFile = getFilenameDateTime() + "_" + name;
+			String logFile = "./LOGS/" + getFilenameDateTime() + "_" + name;
 			fileHandler = new FileHandler(logFile);
 		} catch (SecurityException | IOException e) {
 			e.printStackTrace();

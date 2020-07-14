@@ -1,11 +1,10 @@
 package com.WMC.Client;
 
 import java.awt.Color;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.Serializable;
 import java.net.URL;
 
@@ -54,50 +53,65 @@ public class ColorScheme implements Serializable {
 	}
 	
 	/**
-	 * Serializes this {@link ColorScheme} to a file
+	 * writes this {@link ColorScheme} to a file
 	 * @param filename
 	 */
 	public void writeToFile(String filename) {
 
 		URL url = ClientChatWindow.class.getResource(filename);
 		
-		try { 
-            FileOutputStream file = new FileOutputStream(url.getPath()); 
-            ObjectOutputStream out = new ObjectOutputStream(file); 
-            
-            out.writeObject(this); 
-  
-            out.close(); 
-            file.close();
-        } catch (IOException e) { 
+		try (BufferedWriter bw = new BufferedWriter(new FileWriter(url.getPath()))) {
+			
+			System.err.println("Writing CS to file...");
+			
+            bw.write("fg:" + foregroundColor.getRGB());
+            bw.newLine();
+            bw.write("bg:" + backgroundColor.getRGB());
+            bw.newLine();
+            bw.write("text:" + textColor.getRGB());
+
+			System.err.println("Success writing CS to file");
+        } catch (Exception e) { 
             e.printStackTrace();
         } 
 	}
 	
 	/**
-	 * Deserializes a {@link ColorScheme} from file
+	 * reads a {@link ColorScheme} from file
 	 * @param filename - path to file to be read from
 	 * @return {@link ColorScheme} object read from file
 	 */
 	public static ColorScheme getFromFile(String filename) {
-
+		
+		ColorScheme cs = new ColorScheme();
 		URL url = ClientChatWindow.class.getResource(filename);
 		
-		try {
-	        FileInputStream file = new FileInputStream(url.getPath());
-	        ObjectInputStream in = new ObjectInputStream (file); 
 
-	        ColorScheme cs = (ColorScheme) in.readObject(); 
-	
-	        in.close(); 
-	        file.close();
-	        
-            System.out.println("Successfully read colorScheme from file");
-	        
-	        return cs;
-	    }  catch (Exception e) { 
-	    	e.printStackTrace();
-	    	return null;
-	    }
+		System.err.println("Reading CS from file...");
+		
+		try (BufferedReader br = new BufferedReader(new FileReader(url.getPath()))) {
+			String line = br.readLine();			
+			while (line != null) {
+				System.err.println(line + "\n");
+				String [] s = line.split(":");
+				Color newColor = new Color(Integer.parseInt(s[1]));
+				
+				if (s[0].equals("fg"))
+					cs.foregroundColor = newColor;
+				else if (s[0].equals("bg"))
+					cs.backgroundColor = newColor;
+				else if (s[0].equals("text"))
+					cs.textColor = newColor;
+				
+				line = br.readLine();
+			}
+			
+			System.err.println("Success reading CS from file");
+			
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		
+    	return cs;
 	}
 }

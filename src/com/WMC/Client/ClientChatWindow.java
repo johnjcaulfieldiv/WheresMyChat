@@ -17,6 +17,8 @@ import java.awt.event.KeyEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.util.HashSet;
+import java.util.logging.Logger;
+
 import javax.swing.JScrollPane;
 import javax.swing.JMenuBar;
 import javax.swing.JMenu;
@@ -31,6 +33,8 @@ public class ClientChatWindow extends JFrame {
 	private static final String HELP_STRING = "Commands: /h[elp], /quit, /exit";
 	
 	private static final String COLOR_FILENAME = "/res/clientChatWindowColorScheme";
+	
+	private Logger LOGGER;
 	
 	private JPanel contentPane;
 	private JTextArea messageTextArea;
@@ -57,14 +61,14 @@ public class ClientChatWindow extends JFrame {
 	private HashSet<String> userList;
 
 	public ClientChatWindow(ClientInformation clientInfo, NetworkIO net) {
+		LOGGER = WMCUtil.createDefaultLogger(ClientChatWindow.class.getName());
+		
 		this.clientInfo = clientInfo;
 		this.netIO = net;
 		userList = new HashSet<>();
 		userList.add(clientInfo.getDisplayName());
 
 		this.colorScheme = ColorScheme.getFromFile(COLOR_FILENAME);
-		if (colorScheme == null)
-			colorScheme = new ColorScheme();
 		
 		setTitle("Where's My Chat, JC?");
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -286,6 +290,8 @@ public class ClientChatWindow extends JFrame {
 	 * handle cleanup then dispose of ClientChatWindow
 	 */
 	public void closeWindow() {
+		sendDisconnectionToServer();
+		
 		netIO.disconnect();
 		
 		colorScheme.writeToFile(COLOR_FILENAME);
@@ -326,8 +332,10 @@ public class ClientChatWindow extends JFrame {
 				}
 				break;
 			case DISCONNECTION:
-				userList.remove(msg.getUser());
-				systemMessage(msg.getUser() + " disconnected\n");
+				if (userList.contains(msg.getUser())) {
+					userList.remove(msg.getUser());
+					systemMessage(msg.getUser() + " disconnected\n");
+				}
 				break;
 			case CHAT:
 				chatMessage(WMCUtil.getTimeStamp() + " " + msg.getUser() + ": " + msg.getBody());
@@ -336,21 +344,20 @@ public class ClientChatWindow extends JFrame {
 				systemMessage(msg.getBody());
 				break;
 			case HEARTBEAT:
-				System.out.println("got heartbeat request");
+				LOGGER.info("got heartbeat request");
 				sendNetworkMessage(new NetworkMessage(NetworkMessage.MessageType.HEARTBEAT, clientInfo.getDisplayName()));
-				System.out.println("sent heartbeat response");
+				LOGGER.info("sent heartbeat response");
 				break;
 			case ERROR:
-				System.err.println(msg);
+				LOGGER.warning(msg.toString());
 				netIO.setActive(false);
+				if (msg.getUser() != null && msg.getUser().equals("[ SERVER ]"))
+					systemMessage(msg.getBody());
 				break;
 			default:
-				System.err.println("Received NetworkMessage with invalid type. Ignoring");
+				LOGGER.warning("Received NetworkMessage with invalid type. Ignoring");
 				break;
-		}		
-		
-		//debug
-		System.err.println(msg.toString());
+		}
 	}
 	
 	private void sendConnectionToServer() {
@@ -358,6 +365,13 @@ public class ClientChatWindow extends JFrame {
 		connectedMsg.setType(NetworkMessage.MessageType.CONNECTION);
 		connectedMsg.setUser(clientInfo.getDisplayName());
 		sendNetworkMessage(connectedMsg);
+	}
+	
+	private void sendDisconnectionToServer() {
+		NetworkMessage disconnectedMsg = new NetworkMessage();
+		disconnectedMsg.setType(NetworkMessage.MessageType.DISCONNECTION);
+		disconnectedMsg.setUser(clientInfo.getDisplayName());
+		sendNetworkMessage(disconnectedMsg);
 	}
 
 	private void reconnectToServer() {
@@ -378,7 +392,7 @@ public class ClientChatWindow extends JFrame {
 			else
 				systemMessage("Failed to connect to server\n");
 		} catch (Exception e) {
-			e.printStackTrace();
+			LOGGER.warning(WMCUtil.stackTraceToString(e));
 			systemMessage("Error connecting. Server may be down\n");
 		}
 	}
