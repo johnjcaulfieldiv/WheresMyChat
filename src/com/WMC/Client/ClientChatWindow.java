@@ -304,7 +304,7 @@ public class ClientChatWindow extends JFrame {
 	}
 	
 	private void startServerReader() {
-		Runnable r = new Runnable() {
+		networkReaderThread = new Thread(new Runnable() {
 			@Override
 			public void run() {
 				while (netIO.isActive()) {
@@ -312,14 +312,20 @@ public class ClientChatWindow extends JFrame {
 					handleNetworkMessage(networkMsg);
 				}
 			}
-		};
-		networkReaderThread = new Thread(r);
+		});
 		networkReaderThread.start();
 	}
 
 	private void handleNetworkMessage(NetworkMessage msg) {
 		switch (msg.getType()) {
 			case CONNECTION:
+				if (msg.getBody() == null) {
+					if (!msg.getUser().equals(clientInfo.getDisplayName())) {
+						systemMessage(msg.getUser() + " connected\n");
+					}
+					break;
+				}
+				
 				String [] users = msg.getBody().split(NetworkMessage.DELIMITER);
 				for (String u : users) {
 					if (!userList.contains(u)) {

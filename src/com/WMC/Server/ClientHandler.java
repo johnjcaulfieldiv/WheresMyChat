@@ -31,7 +31,7 @@ public class ClientHandler implements Runnable {
 		isActive = true;
 
 		LOGGER = WMCUtil.createDefaultLogger(ClientHandler.class.getName());
-	}	
+	}
 	
 	@Override
 	public void run() {
@@ -51,7 +51,9 @@ public class ClientHandler implements Runnable {
 		
 		outStreams.remove(client.getInetAddress().getHostAddress());
 		outStreams.put(clientName, objectOut);
-		broadcastUserList();
+		
+		sendClientUserList();
+		broadcastClientConnected();
 				
 		try {
 			NetworkMessage netMsg = readNetworkMessage();			
@@ -152,6 +154,27 @@ public class ClientHandler implements Runnable {
 		}
 	}
 	
+	private void sendClientMessage(NetworkMessage msg) {
+		try {
+			objectOut.writeObject(msg);
+			objectOut.flush();
+			LOGGER.info("wrote to " + clientName + ": " + msg);
+		} catch (Exception e) {
+			isActive = false;
+			LOGGER.warning(WMCUtil.stackTraceToString(e));
+		}
+	}
+	
+	private void sendClientUserList() {		
+		String users = "";
+		for (String key : outStreams.keySet()) {
+			users += key + NetworkMessage.DELIMITER;
+		}
+		NetworkMessage userListMessage = new NetworkMessage(NetworkMessage.MessageType.CONNECTION);
+		userListMessage.setBody(users);
+		sendClientMessage(userListMessage);
+	}
+	
 	private void broadcastUserList() {		
 		String users = "";
 		for (String key : outStreams.keySet()) {
@@ -162,6 +185,7 @@ public class ClientHandler implements Runnable {
 		broadcastNetworkMessage(userListMessage);
 	}
 	
+	@SuppressWarnings("unused")
 	private void broadcastClientConnected() {		
 		NetworkMessage conn = new NetworkMessage(NetworkMessage.MessageType.CONNECTION);
 		conn.setUser(this.clientName);
