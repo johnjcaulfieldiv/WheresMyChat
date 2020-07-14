@@ -1,7 +1,5 @@
 package com.WMC.Client;
 
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
@@ -21,8 +19,6 @@ public class NetworkIO {
 	private String ip;
 	private int port;
 
-	DataInputStream  in;
-	DataOutputStream out;
 	ObjectOutputStream objectOut;
 	ObjectInputStream objectIn;
 	
@@ -66,41 +62,6 @@ public class NetworkIO {
 		}
 		
 		return true;
-	}
-	
-	public void send(String msg) {
-		if (!isActive) {
-			disconnect();
-			return;
-		}	
-		
-		try {
-			out.writeUTF(msg);
-			out.flush();
-		} catch (IOException e) {
-			LOGGER.warning("Failed to send to server: " + msg);
-		}
-	}
-	
-	public String receive() {
-		if (!isActive) {
-			disconnect();
-			return "Lost Connection to Server\n";
-		}			
-		
-		String msg = "Error - server failed to read from socket";
-		try {
-			msg = in.readUTF();
-		} catch (IOException e) {
-			if (e.getClass().equals(SocketException.class)) {
-				isActive = false;
-				return "Lost Connection to Server\n";
-			}
-			else
-				LOGGER.severe(WMCUtil.stackTraceToString(e));
-		}
-		
-		return msg;
 	}
 	
 	public void sendNetworkMessage(NetworkMessage msg) {

@@ -62,15 +62,11 @@ public class ColorScheme implements Serializable {
 		
 		try (BufferedWriter bw = new BufferedWriter(new FileWriter(url.getPath()))) {
 			
-			System.err.println("Writing CS to file...");
-			
             bw.write("fg:" + foregroundColor.getRGB());
             bw.newLine();
             bw.write("bg:" + backgroundColor.getRGB());
             bw.newLine();
             bw.write("text:" + textColor.getRGB());
-
-			System.err.println("Success writing CS to file");
         } catch (Exception e) { 
             e.printStackTrace();
         } 
@@ -85,14 +81,10 @@ public class ColorScheme implements Serializable {
 		
 		ColorScheme cs = new ColorScheme();
 		URL url = ClientChatWindow.class.getResource(filename);
-		
-
-		System.err.println("Reading CS from file...");
-		
+				
 		try (BufferedReader br = new BufferedReader(new FileReader(url.getPath()))) {
 			String line = br.readLine();			
 			while (line != null) {
-				System.err.println(line + "\n");
 				String [] s = line.split(":");
 				Color newColor = new Color(Integer.parseInt(s[1]));
 				
@@ -105,8 +97,6 @@ public class ColorScheme implements Serializable {
 				
 				line = br.readLine();
 			}
-			
-			System.err.println("Success reading CS from file");
 			
 		} catch (Exception e) {
 			e.printStackTrace();

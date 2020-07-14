@@ -254,10 +254,7 @@ public class ClientChatWindow extends JFrame {
 		systemMessage(HELP_STRING + "\n");
 	}
 	
-	public synchronized void sendUserMessage(String msg) {
-//		chatTextArea.append(WMCUtil.getTimeStamp() + " " + clientInfo.getDisplayName() + ": " + msg);
-//		scrollChatAreaToBottom();
-		
+	public synchronized void sendUserMessage(String msg) {		
 		NetworkMessage nm = new NetworkMessage(NetworkMessage.MessageType.CHAT, clientInfo.displayName, msg);
 		sendNetworkMessage(nm);
 	}
