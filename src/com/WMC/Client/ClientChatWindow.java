@@ -46,7 +46,7 @@ public class ClientChatWindow extends JFrame {
 	private JMenu fileMenu;
 	private JMenuItem fileMenuItem_Exit;
 	private JMenu viewMenu;
-	private JMenuItem viewMenuItem_Colors;
+	private JMenuItem viewMenuItem_BackgroundColor;
 	
 	private ColorScheme colorScheme;
 	
@@ -60,6 +60,7 @@ public class ClientChatWindow extends JFrame {
 	private JMenuItem fileMenuItem_Connect;
 	
 	private HashSet<String> userList;
+	private JMenuItem viewMenuItem_ForegroundColor;
 
 	public ClientChatWindow(ClientInformation clientInfo, NetworkIO net) {
 		LOGGER = WMCUtil.createDefaultLogger(ClientChatWindow.class.getName());
@@ -107,13 +108,21 @@ public class ClientChatWindow extends JFrame {
 		viewMenu = new JMenu("View");
 		menuBar.add(viewMenu);
 		
-		viewMenuItem_Colors = new JMenuItem("Change Colors");
-		viewMenuItem_Colors.addActionListener(new ActionListener() {
+		viewMenuItem_BackgroundColor = new JMenuItem("Change Background Color");
+		viewMenuItem_BackgroundColor.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				setColorSchemeWithDialog();
+				setBGColorWithDialog();
 			}
 		});
-		viewMenu.add(viewMenuItem_Colors);
+		
+		viewMenuItem_ForegroundColor = new JMenuItem("Change Text Color");
+		viewMenuItem_ForegroundColor.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				setTextColorWithDialog();
+			}
+		});
+		viewMenu.add(viewMenuItem_ForegroundColor);
+		viewMenu.add(viewMenuItem_BackgroundColor);
 		contentPane = new JPanel();
 		contentPane.setBorder(new EmptyBorder(5, 5, 5, 5));
 		setContentPane(contentPane);
@@ -183,9 +192,8 @@ public class ClientChatWindow extends JFrame {
 		
 		setColors();
 		
-		String welcomeMessage = WMCUtil.getTimeStamp() + "\n" + 
-				clientInfo.getServerAddress() + ":" + clientInfo.getServerPort() + "\n" +
-				"Welcome to chat, " + clientInfo.getDisplayName() + "!\n\n";
+		String welcomeMessage = WMCUtil.getTimeStamp() + 
+				" Where's My Chat, " + clientInfo.getDisplayName() + "?!\n\n";
 		chatTextArea.setText(welcomeMessage);
 
 		if (netIO.connect()) {
@@ -218,6 +226,16 @@ public class ClientChatWindow extends JFrame {
 		setColors();
 	}
 	
+	private void setTextColorWithDialog() {
+		colorScheme.setTextColor(JColorChooser.showDialog(null, "Select text color", colorScheme.getBackgroundColor()));
+		setColors();
+	}
+	
+	private void setBGColorWithDialog() {
+		colorScheme.setForegroundColor(JColorChooser.showDialog(null, "Select chat background color", colorScheme.getBackgroundColor()));
+		setColors();
+	}
+	
 	public void setMessageFocus() {
 		messageTextArea.requestFocusInWindow();
 	}
@@ -227,7 +245,7 @@ public class ClientChatWindow extends JFrame {
 	}
 	
 	public void handleCommand(String cmd) {
-		cmd = cmd.trim().substring(1);
+		cmd = cmd.trim().substring(1).toLowerCase();
 		
 		if (cmd.equals("quit") || cmd.equals("exit")) {
 			closeWindow();
@@ -240,6 +258,12 @@ public class ClientChatWindow extends JFrame {
 		}
 		else if (cmd.startsWith("color")) {
 			setColorSchemeWithDialog();
+		}
+		else if (cmd.equals("tc")) {
+			setTextColorWithDialog();
+		}
+		else if (cmd.equals("bg")) {
+			setBGColorWithDialog();
 		}
 		else if (cmd.equals("reconnect")) {
 			reconnectToServer();
