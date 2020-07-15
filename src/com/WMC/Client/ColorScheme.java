@@ -3,8 +3,10 @@ package com.WMC.Client;
 import java.awt.Color;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
+import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
+import java.io.IOException;
 import java.io.Serializable;
 import java.net.URL;
 
@@ -59,6 +61,13 @@ public class ColorScheme implements Serializable {
 	public void writeToFile(String filename) {
 
 		URL url = ClientChatWindow.class.getResource(filename);
+		try {
+			File f = new File(url.getPath());
+			f.getParentFile().mkdirs();
+			f.createNewFile();
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
 		
 		try (BufferedWriter bw = new BufferedWriter(new FileWriter(url.getPath()))) {
 			
@@ -81,6 +90,14 @@ public class ColorScheme implements Serializable {
 		
 		ColorScheme cs = new ColorScheme();
 		URL url = ClientChatWindow.class.getResource(filename);
+		
+		try {
+			File f = new File(url.getPath());
+			f.getParentFile().mkdirs();
+			f.createNewFile();
+		} catch (Exception e) {
+			e.printStackTrace();
+		}			
 				
 		try (BufferedReader br = new BufferedReader(new FileReader(url.getPath()))) {
 			String line = br.readLine();			

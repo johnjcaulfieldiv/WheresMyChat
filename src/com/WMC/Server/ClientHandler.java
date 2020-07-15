@@ -64,10 +64,7 @@ public class ClientHandler implements Runnable {
 				
 		try {
 			NetworkMessage netMsg = readNetworkMessage();			
-			while (isActive && 
-				   netMsg != null && 
-				   netMsg.getType() != NetworkMessage.MessageType.ERROR && 
-				   netMsg.getType() != NetworkMessage.MessageType.DISCONNECTION) {
+			while (isActive && netMsg != null) {
 				
 				handleClientMessage(netMsg);
 				
@@ -87,10 +84,12 @@ public class ClientHandler implements Runnable {
 			isActive = false;
 			
 			try {				
+				heartbeatManager.join(1000);
+			} catch (Exception e) {}
+			
+			try {				
 				client.close();
-			} catch (IOException e) {
-				LOGGER.warning(WMCUtil.stackTraceToString(e));
-			}
+			} catch (IOException e) {}
 		}
 	}
 	
@@ -120,23 +119,26 @@ public class ClientHandler implements Runnable {
 	}
 	
 	private void startHeartbeatManager() {
-		Thread hbm = new Thread(new Runnable() {
+		Thread heartbeatManager = new Thread(new Runnable() {
 			@Override
 			public void run() {
 				while (isActive) {
+					sendHeartbeatRequest();
+
+					try {
+						Thread.sleep(WMCUtil.HEARTBEAT_RATE / 3);
+					} catch (InterruptedException e) {}
+					
 					long currentTime = new Date().getTime();
 					long heartbeatTime = previousHeartbeat.getTime();
 					if (currentTime - heartbeatTime > WMCUtil.HEARTBEAT_RATE) {
 						LOGGER.info(clientName + " has timed out");
 						isActive = false;
 					}
-					try {
-						Thread.sleep(WMCUtil.HEARTBEAT_RATE / 5);
-					} catch (InterruptedException e) {}
 				}
 			}
 		});
-		hbm.start();
+		heartbeatManager.start();
 	}
 		
 	private NetworkMessage readNetworkMessage() {
@@ -165,7 +167,10 @@ public class ClientHandler implements Runnable {
 				ObjectOutputStream oOut = outStreams.get(key);
 				oOut.writeObject(msg);
 				oOut.flush();
-				LOGGER.info("wrote to " + key + ": " + msg);
+				
+				// log all traffic except for heartbeats
+				if (msg.getType() != NetworkMessage.MessageType.HEARTBEAT)
+					LOGGER.info("wrote to " + key + ": " + msg);
 			}
 		} catch (Exception e) {
 			if (isActive && msg.getType() != NetworkMessage.MessageType.DISCONNECTION)
@@ -208,15 +213,21 @@ public class ClientHandler implements Runnable {
 	}
 	
 	@SuppressWarnings("unused")
-	private void broadcastClientConnected() {		
+	private void broadcastClientConnected() {
 		NetworkMessage conn = new NetworkMessage(NetworkMessage.MessageType.CONNECTION);
 		conn.setUser(this.clientName);
 		this.broadcastNetworkMessage(conn);
 	}
 	
-	private void broadcastClientDisconnected() {		
+	private void broadcastClientDisconnected() {
 		NetworkMessage disc = new NetworkMessage(NetworkMessage.MessageType.DISCONNECTION);
 		disc.setUser(this.clientName);
 		this.broadcastNetworkMessage(disc);
+	}
+	
+	private void sendHeartbeatRequest() {
+		NetworkMessage hbr = new NetworkMessage(NetworkMessage.MessageType.HEARTBEAT);
+		hbr.setUser(this.clientName);
+		this.broadcastNetworkMessage(hbr);		
 	}
 }

@@ -44,23 +44,21 @@ public class ClientChatWindow extends JFrame {
 
 	private JMenuBar menuBar;
 	private JMenu fileMenu;
+	private JMenuItem fileMenuItem_Connect;
 	private JMenuItem fileMenuItem_Exit;
 	private JMenu viewMenu;
 	private JMenuItem viewMenuItem_BackgroundColor;
+	private JMenuItem viewMenuItem_ForegroundColor;
 	
-	private ColorScheme colorScheme;
-	
+	private ColorScheme colorScheme;	
 	private ClientInformation clientInfo;
 	
 	private NetworkIO netIO;
 	private Thread networkReaderThread;
-	private Thread heartbeatThread;
 	
 	private boolean shiftPressed = false;
-	private JMenuItem fileMenuItem_Connect;
 	
 	private HashSet<String> userList;
-	private JMenuItem viewMenuItem_ForegroundColor;
 
 	public ClientChatWindow(ClientInformation clientInfo, NetworkIO net) {
 		LOGGER = WMCUtil.createDefaultLogger(ClientChatWindow.class.getName());
@@ -202,8 +200,6 @@ public class ClientChatWindow extends JFrame {
 			startServerReader();
 			
 			sendConnectionToServer();
-
-			startHeartbeat();
 		}
 		else {
 			systemMessage("Failed to connect to server\n");
@@ -328,13 +324,6 @@ public class ClientChatWindow extends JFrame {
 			e.printStackTrace();
 		}
 		
-		try {
-			if (heartbeatThread != null)
-				heartbeatThread.join(1000);
-		} catch (InterruptedException e) {
-			e.printStackTrace();
-		}
-		
 		this.dispose();
 	}
 	
@@ -345,23 +334,6 @@ public class ClientChatWindow extends JFrame {
 				while (netIO.isActive()) {
 					NetworkMessage networkMsg = netIO.receiveNetworkMessage();
 					handleNetworkMessage(networkMsg);
-				}
-			}
-		});
-		networkReaderThread.start();
-	}
-	
-	private void startHeartbeat() {
-		networkReaderThread = new Thread(new Runnable() {
-			@Override
-			public void run() {
-				while (netIO.isActive()) {
-					NetworkMessage heartbeatMsg = new NetworkMessage(NetworkMessage.MessageType.HEARTBEAT);
-					heartbeatMsg.setUser(clientInfo.getDisplayName());
-					netIO.sendNetworkMessage(heartbeatMsg);
-					try {
-						Thread.sleep(WMCUtil.HEARTBEAT_RATE / 2);
-					} catch (InterruptedException e) {}
 				}
 			}
 		});
@@ -400,9 +372,7 @@ public class ClientChatWindow extends JFrame {
 				systemMessage(msg.getBody());
 				break;
 			case HEARTBEAT:
-				LOGGER.info("got heartbeat request");
-				sendNetworkMessage(new NetworkMessage(NetworkMessage.MessageType.HEARTBEAT, clientInfo.getDisplayName()));
-				LOGGER.info("sent heartbeat response");
+				sendNetworkMessage(msg);
 				break;
 			case ERROR:
 				LOGGER.warning(msg.toString());

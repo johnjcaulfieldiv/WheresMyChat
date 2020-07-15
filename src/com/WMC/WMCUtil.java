@@ -1,5 +1,6 @@
 package com.WMC;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -80,6 +81,9 @@ public class WMCUtil {
 		Handler fileHandler = null;
 		try {
 			String logFile = "./LOGS/" + getFilenameDateTime() + "_" + name;
+			File lf = new File(logFile);
+			lf.getParentFile().mkdirs();
+			lf.createNewFile();
 			fileHandler = new FileHandler(logFile);
 		} catch (SecurityException | IOException e) {
 			e.printStackTrace();
