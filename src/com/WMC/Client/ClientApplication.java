@@ -10,22 +10,17 @@ import com.WMC.WMCUtil;
 public class ClientApplication {
 
 	public static void main(String [] args) {
-		
-		Logger LOGGER = WMCUtil.createDefaultLogger(ClientApplication.class.getName());
-		
+				
 		try {
 			UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
 		} catch (Exception e) {
-			LOGGER.severe(WMCUtil.stackTraceToString(e));
+			e.printStackTrace(System.err);
 		}
 		
-		ClientInformation clientInfo = new ClientInformation();
-		
-		LOGGER.info("Starting ClientInitializeWindow");
 		EventQueue.invokeLater(new Runnable() {
 			@Override
 			public void run() {
-				ClientInitializeWindow initWindow = new ClientInitializeWindow(clientInfo);
+				ClientInitializeWindow initWindow = new ClientInitializeWindow(new ClientInformation());
 				initWindow.clientInitFrame.setVisible(true);
 			}
 		});
