@@ -17,7 +17,7 @@ public class WMCUtil {
 	private static final SimpleDateFormat DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd");
 	private static final SimpleDateFormat TIME_FORMAT = new SimpleDateFormat("HH:mm:ss");
 	private static final SimpleDateFormat DATETIME_FORMAT = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
-	private static final SimpleDateFormat FILENAME_DATETIME_FORMAT = new SimpleDateFormat("yyyy-MM-dd-HH-mm-ss");
+	private static final SimpleDateFormat FILENAME_DATETIME_FORMAT = new SimpleDateFormat("yyyy-MM-dd_HH-mm-ss");
 	
 	public static final int HEARTBEAT_RATE = 10000; // in milliseconds
 	
@@ -58,7 +58,7 @@ public class WMCUtil {
 	
 	/**
 	 * For use in log file naming
-	* @return Current datetime in form: yyyy-MM-dd-HH-mm-ss
+	* @return Current datetime in form: yyyy-MM-dd_HH-mm-ss
 	*/
 	public static String getFilenameDateTime() {
 		return FILENAME_DATETIME_FORMAT.format(new Date().getTime());
