@@ -36,13 +36,14 @@ public class Server {
 		LOGGER = WMCUtil.createDefaultLogger(Server.class.getName());
 	}
 	
-	public void start() {
+	public void start() throws Exception {
 		try {
 			server = new ServerSocket(this.port);	
 			isBound = true;
 			LOGGER.log(Level.INFO, "Server started");
 		} catch (IOException e) {
 			LOGGER.log(Level.SEVERE, WMCUtil.stackTraceToString(e));
+			throw new Exception("Could not start server on port: " + port);
 		}
 	}
 	

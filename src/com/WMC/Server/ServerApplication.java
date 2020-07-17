@@ -22,7 +22,7 @@ public class ServerApplication {
 		try {
 			port = Integer.parseInt(args[0]);
 		} catch (NumberFormatException e) {
-			System.err.println("Error - port must be an integer\nUsage: ServerApplication [port]");
+			System.err.println("Error - port must be an integer in range 1100-65535\nUsage: ServerApplication [port]");
 			return;
 		}
 		
@@ -48,7 +48,7 @@ public class ServerApplication {
 			s.stop();
 			
 		} catch (IllegalArgumentException e) {
-			System.err.println("Error - Port must be in range 1100-65535\nUsage: ServerApplication [port]");
+			System.err.println("Error - Port must be in range 1100-65535\n");
 		} catch (Exception e) {
 			e.printStackTrace();
 		}

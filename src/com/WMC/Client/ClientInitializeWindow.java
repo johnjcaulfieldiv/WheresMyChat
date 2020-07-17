@@ -10,6 +10,7 @@ import javax.swing.JButton;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
 import java.awt.event.ActionListener;
+import java.awt.EventQueue;
 import java.awt.event.ActionEvent;
 import javax.swing.ImageIcon;
 
@@ -185,6 +186,18 @@ public class ClientInitializeWindow {
 		clientInfo.setDisplayName(displayNameTextField.getText().trim());
 		clientInfo.setServerAddress(serverAddressTextField.getText().trim());
 		clientInfo.setServerPort(serverPortTextField.getText().trim());
+		
+		EventQueue.invokeLater(new Runnable() {
+			public void run() {
+				try {
+					ClientChatWindow chatWindow = new ClientChatWindow(clientInfo);
+					chatWindow.setVisible(true);
+					chatWindow.setMessageFocus();
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
+			}
+		});
 		
 		clientInitFrame.dispose();
 	}	

@@ -212,7 +212,6 @@ public class ClientHandler implements Runnable {
 		broadcastNetworkMessage(userListMessage);
 	}
 	
-	@SuppressWarnings("unused")
 	private void broadcastClientConnected() {
 		NetworkMessage conn = new NetworkMessage(NetworkMessage.MessageType.CONNECTION);
 		conn.setUser(this.clientName);

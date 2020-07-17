@@ -32,7 +32,7 @@ public class ClientChatWindow extends JFrame {
 	private static final String SYSTEM_TAG = "[ SYSTEM ]";
 	private static final String HELP_STRING = "Commands: /h[elp], /quit, /exit";
 	
-	private static final String COLOR_FILENAME = "/res/clientChatWindowColorScheme";
+	private static final String COLOR_FILENAME = "./res/clientChatWindowColorScheme";
 	
 	private Logger LOGGER;
 	
@@ -60,11 +60,17 @@ public class ClientChatWindow extends JFrame {
 	
 	private HashSet<String> userList;
 
-	public ClientChatWindow(ClientInformation clientInfo, NetworkIO net) {
+	public ClientChatWindow(ClientInformation clientInfo) {
 		LOGGER = WMCUtil.createDefaultLogger(ClientChatWindow.class.getName());
-		
+				
 		this.clientInfo = clientInfo;
-		this.netIO = net;
+		
+		try {
+			netIO = new NetworkIO(clientInfo);
+		} catch (Exception e) {
+			LOGGER.severe(WMCUtil.stackTraceToString(e));
+		}
+		
 		userList = new HashSet<>();
 		userList.add(clientInfo.getDisplayName());
 
@@ -417,9 +423,12 @@ public class ClientChatWindow extends JFrame {
 				startServerReader();
 				sendConnectionToServer();
 			}
-			else
+			else {
+				netIO.setActive(false);
 				systemMessage("Failed to connect to server\n");
+			}
 		} catch (Exception e) {
+			netIO.setActive(false);
 			LOGGER.warning(WMCUtil.stackTraceToString(e));
 			systemMessage("Error connecting. Server may be down\n");
 		}

@@ -13,36 +13,33 @@ import com.WMC.WMCUtil;
 public class NetworkIO {
 	private Logger LOGGER;
 	
-	private ClientInformation clientInfo;
-	
 	private Socket socket;
 	private String ip;
 	private int port;
 
-	ObjectOutputStream objectOut;
-	ObjectInputStream objectIn;
+	private ObjectOutputStream objectOut;
+	private ObjectInputStream objectIn;
 	
 	private boolean isActive;
 			
 	public NetworkIO(ClientInformation clientInfo) throws Exception {
 		LOGGER = WMCUtil.createDefaultLogger(NetworkIO.class.getName());
 		
-		this.clientInfo = clientInfo;
-		isActive = true;
-		
-		if (this.clientInfo.getServerAddress().equals("localhost"))
-			this.ip = "127.0.0.1";
+		if (clientInfo.getServerAddress().equals("localhost"))
+			ip = "127.0.0.1";
 		else
-			this.ip = clientInfo.getServerAddress();
+			ip = clientInfo.getServerAddress();
 		
 		try {
-			port = Integer.parseInt(this.clientInfo.getServerPort());
+			port = Integer.parseInt(clientInfo.getServerPort());
 			if (port < 1100 || port > 65535)
 				throw new IllegalArgumentException();
 		} catch (Exception e) {
 			LOGGER.severe(WMCUtil.stackTraceToString(e));
 			throw new IllegalArgumentException();
-		}	
+		}
+
+		isActive = true;
 	}
 	
 	/**
@@ -55,6 +52,7 @@ public class NetworkIO {
 
 			objectOut = new ObjectOutputStream(socket.getOutputStream());
 			objectOut.flush(); // flush the header
+			
 			objectIn = new ObjectInputStream(socket.getInputStream());
 		} catch (IOException e) {
 			LOGGER.severe(WMCUtil.stackTraceToString(e));
@@ -104,23 +102,18 @@ public class NetworkIO {
 	
 	public void disconnect() {
 		isActive = false;
+		
 		try {
 			objectOut.close();
-		} catch (Exception e) {
-			// unhandled exception. shutting down anyway
-		}
+		} catch (Exception e) {}
 		
 		try {
 			objectIn.close();
-		} catch (IOException | NullPointerException e) {
-			// unhandled exception. shutting down anyway
-		}
+		} catch (Exception e) {}
 		
 		try {
 			socket.close();
-		} catch (Exception e) {
-			// unhandled exception. shutting down anyway
-		}
+		} catch (Exception e) {}
 	}
 	
 	public Socket getSocket() {

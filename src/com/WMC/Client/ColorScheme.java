@@ -60,16 +60,15 @@ public class ColorScheme implements Serializable {
 	 */
 	public void writeToFile(String filename) {
 
-		URL url = ClientChatWindow.class.getResource(filename);
 		try {
-			File f = new File(url.getPath());
+			File f = new File(filename);
 			f.getParentFile().mkdirs();
 			f.createNewFile();
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
 		
-		try (BufferedWriter bw = new BufferedWriter(new FileWriter(url.getPath()))) {
+		try (BufferedWriter bw = new BufferedWriter(new FileWriter(filename))) {
 			
             bw.write("fg:" + foregroundColor.getRGB());
             bw.newLine();
@@ -89,17 +88,16 @@ public class ColorScheme implements Serializable {
 	public static ColorScheme getFromFile(String filename) {
 		
 		ColorScheme cs = new ColorScheme();
-		URL url = ClientChatWindow.class.getResource(filename);
 		
 		try {
-			File f = new File(url.getPath());
+			File f = new File(filename);
 			f.getParentFile().mkdirs();
 			f.createNewFile();
 		} catch (Exception e) {
 			e.printStackTrace();
 		}			
 				
-		try (BufferedReader br = new BufferedReader(new FileReader(url.getPath()))) {
+		try (BufferedReader br = new BufferedReader(new FileReader(filename))) {
 			String line = br.readLine();			
 			while (line != null) {
 				String [] s = line.split(":");
